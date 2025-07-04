@@ -1,0 +1,104 @@
+name: 福彩3D-百位杀号
+
+on:
+  workflow_dispatch: {}
+
+jobs:
+  analyze:
+    runs-on: ubuntu-latest
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: ${{ secrets.MYSQL_PASSWORD }}
+          MYSQL_DATABASE: ${{ secrets.MYSQL_DATABASE }}
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 --silent"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install requirements
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      #      - name: Download database backup
+      #        env:
+      #          BACKUP_PASSWORD: ${{ secrets.BACKUP_PASSWORD }}
+      #        run: |
+      #          mkdir -p data
+      #          wget -O data/lotto_backup.zip "https://github.com/suwei8/lotto_ai3_v2-Backup_data/releases/download/backup-20250703/lotto_20250703_backup.zip"
+      #          unzip -P "$BACKUP_PASSWORD" -o data/lotto_backup.zip -d data/
+      #          ls -l data/
+
+      - name: Download latest database backup (auto)
+        env:
+          BACKUP_PASSWORD: ${{ secrets.BACKUP_PASSWORD }}
+        run: |
+          mkdir -p data
+          
+          # Get latest release info
+          LATEST_JSON=$(curl -s https://api.github.com/repos/suwei8/lotto_ai3_v2-Backup_data/releases/latest)
+          
+          # Parse URL
+          DOWNLOAD_URL=$(echo $LATEST_JSON | jq -r '.assets[] | select(.name | endswith("_backup.zip")) | .browser_download_url')
+          
+          echo "✅ Latest backup URL: $DOWNLOAD_URL"
+          
+          wget -O data/lotto_backup.zip "$DOWNLOAD_URL"
+          
+          unzip -P "$BACKUP_PASSWORD" -o data/lotto_backup.zip -d data/
+          ls -l data/
+
+
+      - name: Decompress SQL gzip
+        run: |
+          gunzip -f data/*.sql.gz
+
+      - name: Restore MySQL Database
+        env:
+          PYTHONIOENCODING: "utf-8"
+          MYSQL_HOST: 127.0.0.1
+          MYSQL_PORT: 3306
+          MYSQL_USER: root
+          MYSQL_PASSWORD: ${{ secrets.MYSQL_PASSWORD }}
+          MYSQL_DATABASE: ${{ secrets.MYSQL_DATABASE }}
+
+        run: |
+          chmod +x scripts/restore_db.sh
+          ./scripts/restore_db.sh
+
+      - name: Set Python UTF-8 Encoding
+        run: echo "PYTHONIOENCODING=utf-8" >> $GITHUB_ENV
+
+      - name: Run Fixed Batch
+        env:
+          PYTHONIOENCODING: "utf-8"
+          MYSQL_HOST: 127.0.0.1
+          MYSQL_PORT: 3306
+          MYSQL_USER: root
+          MYSQL_PASSWORD: ${{ secrets.MYSQL_PASSWORD }}
+          MYSQL_DATABASE: ${{ secrets.MYSQL_DATABASE }}
+
+          # === Actions 参数 ===
+
+          # === 固定默认参数（不暴露给界面） ===
+          WECHAT_API_URL: ${{ secrets.WECHAT_API_URL }}
+          WECHAT_API_KEY: ${{ secrets.WECHAT_API_KEY }}
+          GITHUB_RUN_NUMBER: ${{ github.run_number }}
+
+
+        run: python scripts/run_3d_batch.py
+#        run: python scripts/run_3d.py > /dev/null 2>&1

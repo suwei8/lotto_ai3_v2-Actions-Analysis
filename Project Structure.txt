@@ -5,6 +5,7 @@ D:\dev_root\lotto_ai3_v2-Actions-Analysis/
 │    ├── workflows/
 │        ├── 3d.yml
 │        ├── debug_param_check.yml
+│        ├── fixed_3d_batch.yml
 │        ├── p3.yml
 │        ├── p5.yml
 │ ├── .gitignore
@@ -13,17 +14,26 @@ D:\dev_root\lotto_ai3_v2-Actions-Analysis/
 │ ├── Project Structure.txt
 │ ├── Project_Structure.py
 │ ├── config/
+│    ├── 3d/
+│        ├── base.yaml
+│        ├── fixed_dingwei_sha_1.yaml
+│        ├── fixed_dingwei_sha_2.yaml
 │    ├── 3d_config.yaml
 │    ├── p3_config.yaml
 │    ├── p5_config.yaml
 │    ├── template.py
 │ ├── log/
+│    ├── run_3d_20250704_145226.log
+│    ├── run_3d_20250704_151415.log
+│    ├── run_3d_20250704_152132.log
+│    ├── run_p5_20250704_223101.log
 │ ├── lotto_ai3_v2-Actions-Analysis.iml
 │ ├── requirements.txt
 │ ├── scripts/
 │    ├── debug_param_check.py
 │    ├── restore_db.sh
 │    ├── run_3d.py
+│    ├── run_3d_batch.py
 │    ├── run_p3.py
 │    ├── run_p5.py
 │ ├── utils/

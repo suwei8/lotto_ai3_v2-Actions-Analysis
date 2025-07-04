@@ -764,7 +764,7 @@ def run_hit_analysis_batch(
     miss_count = 0            # 未命中次数
     skip_count = 0            # ✅ 新增：跳过本期（推荐不足或回溯为空）
     open_rank_counter = Counter()  # ✅ 累计开奖号码在推荐频次中出现的排名
-
+    print(f"🟢 lookback_n (batch) = {analysis_kwargs.get('lookback_n')}")
     # ✅ 支持 query_issues = ['All']，自动提取所有期号
     if query_issues == ["All"]:
         prediction_table = get_prediction_table(lottery_name)
