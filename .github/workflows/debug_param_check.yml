@@ -1,0 +1,41 @@
+name: Debug Param Check
+
+on:
+  workflow_dispatch:
+    inputs:
+      dummy:
+        description: "Manual trigger"
+        required: false
+  push:
+    paths:
+      - "scripts/debug_param_check.py"
+      - ".github/workflows/debug_param_check.yml"
+      - "config/p5_config.yaml"
+      - "requirements.txt"
+
+jobs:
+  param-check:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 📥 检出仓库
+        uses: actions/checkout@v4
+
+      - name: 🐍 设置 Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: 🧩 安装 debug 依赖
+        run: |
+          python -m pip install --upgrade pip
+          pip install psutil pyyaml
+
+      - name: ⚙️ 参数类型调试（ALL_MODE_LIMIT=None）
+        run: python scripts/debug_param_check.py
+        env:
+          # ✅ 不传 ALL_MODE_LIMIT，等价于 NoneType
+          LOOKBACK_N: 0
+          ENABLE_SHA1: "[]"
+          ENABLE_DINGWEI_SHA: "False"
+          # 🔑 需要可以在这里追加更多环境变量

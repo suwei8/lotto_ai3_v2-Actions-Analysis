@@ -1,0 +1,234 @@
+name: 福彩3D
+
+on:
+  workflow_dispatch:
+    inputs:
+      CHECK_MODE:
+        description: "位置判断模式"
+        required: true
+        default: "dingwei"
+        type: choice
+        options: [dingwei, all]
+
+      DINGWEI_SHA_POS:
+        description: "定位位置（0=百位, 1=十位, 2=个位）"
+        required: true
+        default: "0"
+        type: choice
+        options: ["0", "1", "2"]
+
+
+      QUERY_PLAYTYPE_NAME:
+        description: "分析玩法"
+        required: true
+        default: "定位5*5*5-百位"
+        type: choice
+        options:
+          - "独胆"
+          - "双胆"
+          - "三胆"
+          - "五码组选"
+          - "六码组选"
+          - "七码组选"
+          - "杀一"
+          - "杀二"
+          - "百位定3"
+          - "十位定3"
+          - "个位定3"
+          - "百位定1"
+          - "十位定1"
+          - "个位定1"
+          - "定位3*3*3-百位"
+          - "定位3*3*3-十位"
+          - "定位3*3*3-个位"
+          - "定位4*4*4-百位"
+          - "定位4*4*4-十位"
+          - "定位4*4*4-个位"
+          - "定位5*5*5-百位"
+          - "定位5*5*5-十位"
+          - "定位5*5*5-个位"
+
+
+
+      ANALYZE_PLAYTYPE_NAME:
+        description: "回溯玩法"
+        required: true
+        default: "定位5*5*5-百位"
+        type: choice
+        options:
+          - "独胆"
+          - "双胆"
+          - "三胆"
+          - "五码组选"
+          - "六码组选"
+          - "七码组选"
+          - "杀一"
+          - "杀二"
+          - "百位定3"
+          - "十位定3"
+          - "个位定3"
+          - "百位定1"
+          - "十位定1"
+          - "个位定1"
+          - "定位3*3*3-百位"
+          - "定位3*3*3-十位"
+          - "定位3*3*3-个位"
+          - "定位4*4*4-百位"
+          - "定位4*4*4-十位"
+          - "定位4*4*4-个位"
+          - "定位5*5*5-百位"
+          - "定位5*5*5-十位"
+          - "定位5*5*5-个位"
+
+      HIT_RANK_LIST:
+        description: "命中排名列表"
+        required: false
+        default: "[1]"
+
+      LOOKBACK_N:
+        description: "回溯期数 0=全部,1=回溯1期"
+        required: false
+        default: "0"
+
+      ENABLE_SHA1:
+        description: "杀号1-策略"
+        required: false
+        default: "False"
+
+      ENABLE_DAN1:
+        description: "定胆1-策略"
+        required: false
+        default: "False"
+
+      ENABLE_DINGWEI_SHA:
+        description: "定位杀号1-策略"
+        required: false
+        default: "[1]"
+
+      ENABLE_DINGWEI_DAN1:
+        description: |
+          【定位定胆1】
+          策略配置示例：
+          [1] = 排行榜第 1 名
+          [-1] = 排行榜倒数第 1 名
+          ["prev+1"] = 上期开奖号位置 +1 的数字
+          ["prev-1"] = 上期开奖号位置 -1 的数字
+          ["prev+1,1"] = 上期开奖号下一位，如果无则取第 1 名
+          False=不启用
+        required: false
+        default: "False"
+
+
+
+jobs:
+  analyze:
+    runs-on: ubuntu-latest
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: ${{ secrets.MYSQL_PASSWORD }}
+          MYSQL_DATABASE: ${{ secrets.MYSQL_DATABASE }}
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 --silent"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install requirements
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Download database backup
+        env:
+          BACKUP_PASSWORD: ${{ secrets.BACKUP_PASSWORD }}
+        run: |
+          mkdir -p data
+          wget -O data/lotto_backup.zip "https://github.com/suwei8/lotto_ai3_v2-Backup_data/releases/download/backup-20250703/lotto_20250703_backup.zip"
+          unzip -P "$BACKUP_PASSWORD" -o data/lotto_backup.zip -d data/
+          ls -l data/
+        
+
+      - name: Decompress SQL gzip
+        run: |
+          gunzip -f data/*.sql.gz
+
+      - name: Restore MySQL Database
+        env:
+          PYTHONIOENCODING: "utf-8"
+          MYSQL_HOST: 127.0.0.1
+          MYSQL_PORT: 3306
+          MYSQL_USER: root
+          MYSQL_PASSWORD: ${{ secrets.MYSQL_PASSWORD }}
+          MYSQL_DATABASE: ${{ secrets.MYSQL_DATABASE }}
+
+        run: |
+          chmod +x scripts/restore_db.sh
+          ./scripts/restore_db.sh
+
+      - name: Set Python UTF-8 Encoding
+        run: echo "PYTHONIOENCODING=utf-8" >> $GITHUB_ENV
+
+      - name: Run Analysis Batch
+        env:
+          PYTHONIOENCODING: "utf-8"
+          MYSQL_HOST: 127.0.0.1
+          MYSQL_PORT: 3306
+          MYSQL_USER: root
+          MYSQL_PASSWORD: ${{ secrets.MYSQL_PASSWORD }}
+          MYSQL_DATABASE: ${{ secrets.MYSQL_DATABASE }}
+
+          # === Actions 参数 ===
+          CHECK_MODE: ${{ github.event.inputs.CHECK_MODE }}
+          DINGWEI_SHA_POS: ${{ github.event.inputs.DINGWEI_SHA_POS }}
+          QUERY_PLAYTYPE_NAME: ${{ github.event.inputs.QUERY_PLAYTYPE_NAME }}
+          ANALYZE_PLAYTYPE_NAME: ${{ github.event.inputs.ANALYZE_PLAYTYPE_NAME }}
+          HIT_RANK_LIST: ${{ github.event.inputs.HIT_RANK_LIST }}
+          LOOKBACK_N: ${{ github.event.inputs.LOOKBACK_N }}
+          ENABLE_SHA1: ${{ github.event.inputs.ENABLE_SHA1 }}
+          ENABLE_DAN1: ${{ github.event.inputs.ENABLE_DAN1 }}
+          ENABLE_DINGWEI_SHA: ${{ github.event.inputs.ENABLE_DINGWEI_SHA }}
+          ENABLE_DINGWEI_DAN1: ${{ github.event.inputs.ENABLE_DINGWEI_DAN1 }}
+          # === 固定默认参数（不暴露给界面） ===
+          WECHAT_API_URL: ${{ secrets.WECHAT_API_URL }}
+          GITHUB_RUN_NUMBER: ${{ github.run_number }}
+
+
+        # run: python scripts/run_p5.py
+        run: python scripts/run_3d.py > /dev/null 2>&1
+
+      - name: Organize log into p5 folder
+        run: |
+          mkdir -p log/3d
+          mv log/run_3d_*.log log/3d/
+
+      - name: Push logs to private repo
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+
+          cd log
+          git init
+          git remote add origin https://suwei8:${{ secrets.PRIVATE_REPO_PAT }}@github.com/suwei8/lotto_ai3_v2-Actions-Analysis-Logs.git
+
+          git checkout -b logs-branch
+
+          # 拉远程最新
+          git pull origin logs-branch --allow-unrelated-histories || echo "⚠️ 首次没有远程分支可拉"
+
+          git add .
+          git commit -m "🤖 日志推送 RUN_${{ github.run_number }} $(date '+%Y-%m-%d %H:%M:%S')"
+
+          git push origin logs-branch
