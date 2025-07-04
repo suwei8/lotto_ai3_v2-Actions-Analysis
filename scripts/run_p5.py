@@ -264,8 +264,9 @@ MAX_LEN = 1800  # 单条消息最大字符数
 
 def send_wechat_message(msg):
     payload = {"content": msg}
+    headers = {"x-api-key": os.getenv("WECHAT_API_KEY")}
     try:
-        resp = requests.post(wechat_api_url, json=payload, timeout=10)
+        resp = requests.post(wechat_api_url, json=payload, headers=headers, timeout=10)
         print(f"✅ 企业微信推送状态: {resp.status_code}")
         print(f"✅ 企业微信响应: {resp.text}")
     except Exception as e:
