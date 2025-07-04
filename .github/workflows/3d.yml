@@ -222,6 +222,7 @@ jobs:
           ENABLE_DINGWEI_DAN1: ${{ github.event.inputs.ENABLE_DINGWEI_DAN1 }}
           # === 固定默认参数（不暴露给界面） ===
           WECHAT_API_URL: ${{ secrets.WECHAT_API_URL }}
+          WECHAT_API_KEY: ${{ secrets.WECHAT_API_KEY }}
           GITHUB_RUN_NUMBER: ${{ github.run_number }}
 
 
