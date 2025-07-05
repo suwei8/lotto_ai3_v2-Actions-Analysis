@@ -337,23 +337,15 @@ msg.append("=============")
 msg.append("分析参数配置")
 
 # 永远输出策略文件路径
-# ✅ 推荐：直接用执行参数，别用 lottery_name（中文）
-lottery_name = os.getenv("LOTTERY", "").strip()
-position_name = os.getenv("POSITION", "").strip()
-config_file = os.getenv("CONFIG_FILE", "").strip()
+strategy_path = os.getenv("STRATEGY_CONFIG_PATH", "").strip()
 
-# 组装 parts
-path_parts = []
-if lottery_name:
-    path_parts.append(lottery_name)
-if position_name:
-    path_parts.append(position_name)
-path_parts.append(config_file or "*")
+if strategy_path and "config" in strategy_path:
+    parts = strategy_path.replace("\\", "/").split("/config/fixed/", 1)
+    relative_path = parts[-1] if len(parts) > 1 else strategy_path
+else:
+    relative_path = "*"
 
-relative_path = "/".join(path_parts)
 msg.append(f"策略配置文件：{relative_path}")
-
-
 
 msg.append(f"分析模式: {analysis_kwargs.get('mode', '')}")
 msg.append(f"回溯期数: {analysis_kwargs.get('lookback_n', '')}")
