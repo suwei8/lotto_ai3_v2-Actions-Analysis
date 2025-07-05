@@ -155,8 +155,7 @@ msg.extend(final_blocks)
 msg.append("=============")
 msg.append(f"✅ 最终汇总结果（共 {len(merged_sha_nums)} 个）:\n")
 msg.append(", ".join(str(n) for n in merged_sha_nums))
-
-msg_text = "\n".join(msg)
+msg.append(f"🎯 {pos_name_cn}-杀：{', '.join(str(n) for n in merged_sha_nums)}")
 
 # === 推送到企业微信（分段+key） ===
 wechat_api_url = os.getenv("WECHAT_API_URL")
