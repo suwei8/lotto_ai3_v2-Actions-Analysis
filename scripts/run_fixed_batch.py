@@ -17,14 +17,14 @@ parser.add_argument("--lottery", type=str, default="3d", help="彩种，如 3d /
 parser.add_argument("--position", type=str, required=True, help="位置，如 baiwei / shiwei / gewei")
 args = parser.parse_args()
 
-enable_hit_check = os.getenv("ENABLE_HIT_CHECK", "False").lower() == "true"
-enable_track_open_rank = os.getenv("ENABLE_TRACK_OPEN_RANK", "False").lower() == "true"
-log_save_mode = os.getenv("LOG_SAVE_MODE", "False").lower() == "true"
-
-try:
-    all_mode_limit = int(os.getenv("ALL_MODE_LIMIT")) if os.getenv("ALL_MODE_LIMIT") else None
-except Exception:
-    all_mode_limit = None
+query_issues_str = os.getenv("QUERY_ISSUES") or "None"
+if query_issues_str == "None":
+    query_issues = [None]
+elif query_issues_str == "All":
+    query_issues = ["All"]
+else:
+    query_issues = query_issues_str.split(",")
+print(f"❓ 当前 query_issues 的值: {query_issues}")
 
 
 LOTTERY = args.lottery
@@ -203,12 +203,8 @@ def send_wechat_message(msg):
     except Exception as e:
         print(f"❌ 企业微信消息推送失败: {e}")
 
-if (
-        enable_hit_check
-        and enable_track_open_rank
-        and log_save_mode
-        and (all_mode_limit != 1)
-):
+# ✅ 只要是【实战模式】，即 query_issues = [None] 就发
+if query_issues == [None]:
     if wechat_api_url:
         msg_lines = msg_text.splitlines()
         cur_msg = ""
@@ -222,4 +218,4 @@ if (
     else:
         print("❌ 未配置 WECHAT_API_URL，企业微信消息未发送")
 else:
-    print("🟢 【回测模式】【已跳过：批量汇总消息发送】")
+    print(f"🟢 【回测模式】【已跳过：批量汇总消息发送】，query_issues={query_issues}")

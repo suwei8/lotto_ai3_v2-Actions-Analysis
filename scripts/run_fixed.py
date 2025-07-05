@@ -99,6 +99,7 @@ print(f"✅ CHECK_MODE: {check_mode}")
 print(f"✅ LOTTERY_NAME: {lottery_name}")
 print(f"✅ 分析模式: {analysis_mode}")
 print("🚩 到这里没卡死，准备 DB connect")
+
 # print(CONFIG)
 # === 初始化 ===
 
@@ -379,7 +380,9 @@ def send_wechat_message(msg):
     except Exception as e:
         print(f"❌ 企业微信消息推送失败: {e}")
 
-if wechat_api_url:
+print(f"✅ 当前 query_issues: {query_issues}")
+if wechat_api_url and not (len(query_issues) == 1 and query_issues[0] is None):
+    # 有 URL 且不是 [None] 才发送
     msg_lines = msg_text.splitlines()
     cur_msg = ""
     for line in msg_lines:
@@ -390,4 +393,4 @@ if wechat_api_url:
     if cur_msg.strip():
         send_wechat_message(cur_msg)
 else:
-    print("❌ 未配置 WECHAT_API_URL，企业微信消息未发送")
+    print("❌ 未配置 WECHAT_API_URL 或 query_issues 是 None，企业微信消息未发送")
