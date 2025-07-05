@@ -7,7 +7,7 @@ QUERY_PLAYTYPE_NAME: 百位定1
 ANALYZE_PLAYTYPE_NAME: 百位定1
 
 # === 回溯期数 ===
-LOOKBACK_N: 1
+#LOOKBACK_N: 1
 
 # === 命中条件 ===
 HIT_RANK_LIST: [1]
