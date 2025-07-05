@@ -7,7 +7,7 @@ QUERY_PLAYTYPE_NAME: 定位5*5*5-百位
 ANALYZE_PLAYTYPE_NAME: 定位5*5*5-百位
 
 # === 回溯期数 ===
-LOOKBACK_N: None
+#LOOKBACK_N: None
 
 # === 命中条件 ===
 HIT_RANK_LIST: [1]

@@ -17,6 +17,16 @@ parser.add_argument("--lottery", type=str, default="3d", help="彩种，如 3d /
 parser.add_argument("--position", type=str, required=True, help="位置，如 baiwei / shiwei / gewei")
 args = parser.parse_args()
 
+enable_hit_check = os.getenv("ENABLE_HIT_CHECK", "False").lower() == "true"
+enable_track_open_rank = os.getenv("ENABLE_TRACK_OPEN_RANK", "False").lower() == "true"
+log_save_mode = os.getenv("LOG_SAVE_MODE", "False").lower() == "true"
+
+try:
+    all_mode_limit = int(os.getenv("ALL_MODE_LIMIT")) if os.getenv("ALL_MODE_LIMIT") else None
+except Exception:
+    all_mode_limit = None
+
+
 LOTTERY = args.lottery
 POSITION = args.position
 # ✅ 新增：读取 GitHub Actions 的 CONFIG_FILE
@@ -190,16 +200,23 @@ def send_wechat_message(msg):
     except Exception as e:
         print(f"❌ 企业微信消息推送失败: {e}")
 
-if wechat_api_url:
-    msg_lines = msg_text.splitlines()
-    cur_msg = ""
-    for line in msg_lines:
-        if len(cur_msg) + len(line) + 1 > MAX_LEN:
+if (
+        enable_hit_check
+        and enable_track_open_rank
+        and log_save_mode
+        and (all_mode_limit != 1)
+):
+    if wechat_api_url:
+        msg_lines = msg_text.splitlines()
+        cur_msg = ""
+        for line in msg_lines:
+            if len(cur_msg) + len(line) + 1 > MAX_LEN:
+                send_wechat_message(cur_msg)
+                cur_msg = ""
+            cur_msg += (line + "\n")
+        if cur_msg.strip():
             send_wechat_message(cur_msg)
-            cur_msg = ""
-        cur_msg += (line + "\n")
-    if cur_msg.strip():
-        send_wechat_message(cur_msg)
+    else:
+        print("❌ 未配置 WECHAT_API_URL，企业微信消息未发送")
 else:
-    print("❌ 未配置 WECHAT_API_URL，企业微信消息未发送")
-
+    print("🟢 【回测模式】【已跳过：批量汇总消息发送】")

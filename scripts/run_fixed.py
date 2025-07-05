@@ -335,22 +335,31 @@ msg.append(f"遇到频次并列时: {analysis_kwargs.get('resolve_tie_mode_dingw
 msg.append(f"跳过推荐不足: {'启用' if analysis_kwargs.get('skip_if_few_dingwei_sha') else '未启用'}")
 msg.append("=============")
 msg.append("分析参数配置")
+
+# 永远输出策略文件路径
+position_name = os.getenv("POSITION", "").strip()
+config_file = os.getenv("CONFIG_FILE", "").strip()
+
+path_parts = [lottery_name]
+if position_name:
+    path_parts.append(position_name)
+path_parts.append(config_file or "*")
+
+relative_path = "/".join(path_parts)
+msg.append(f"策略配置文件：{relative_path}")
+
+
 msg.append(f"分析模式: {analysis_kwargs.get('mode', '')}")
 msg.append(f"回溯期数: {analysis_kwargs.get('lookback_n', '')}")
 msg.append(f"回溯偏移: {analysis_kwargs.get('lookback_start_offset', '')}")
 msg.append(f"定位杀号位: {dingwei_sha_pos if dingwei_sha_pos is not None else 'None'}")
-msg.append(f"杀号判断模式: {'定位位判断' if check_mode=='dingwei' else '全位判断'}")
-for k in ['enable_sha1', 'enable_sha2', 'enable_dan1', 'enable_dan2', 'enable_dingwei_sha', 'enable_dingwei_sha2', 'enable_dingwei_sha3', 'enable_dingwei_dan1']:
-    if analysis_kwargs.get(k):
-        msg.append(f"策略类型: {k}")
-        msg.append(f"取值配置: {analysis_kwargs.get(k)}")
-msg.append(f"🎯 命中次数筛选命中值: {analysis_kwargs.get('hit_rank_list', '')}")
-msg.append(f"📈 命中排名筛选：{analysis_kwargs.get('hit_rank_list', '')}")
+msg.append(f"位置判断模式: {'定位位判断' if check_mode=='dingwei' else '全位判断'}")
+msg.append(f"📈 命中筛选值：{analysis_kwargs.get('hit_rank_list', '')}")
 if miss_info:
     total_periods, miss_count, skip_count = miss_info.groups()
     msg.append(f"📉 共 {total_periods} 期，未命中次数：{miss_count} 期，跳过 {skip_count} 期")
 if hit_rate: msg.append(f"✅ 命中率：{hit_rate.group(1)}")
-msg.append("📊 开奖号码在推荐数字频次排序中的排名：")
+msg.append("📊 开奖号码命中排行位置：")
 if not_hit_ranks:
     msg.append(f"   - 未命中排名位：{not_hit_ranks.group(1)}")
 for rank, times in rank_stats:
