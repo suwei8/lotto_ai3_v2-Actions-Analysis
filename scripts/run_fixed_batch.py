@@ -204,7 +204,7 @@ def send_wechat_message(msg):
         print(f"❌ 企业微信消息推送失败: {e}")
 
 # ✅ 只要是【实战模式】，即 query_issues = [None] 就发
-if query_issues == [None]:
+if query_issues != ["All"]:
     if wechat_api_url:
         msg_lines = msg_text.splitlines()
         cur_msg = ""
