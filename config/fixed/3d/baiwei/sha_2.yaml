@@ -1,0 +1,9 @@
+# config/fixed/3d/baiwei_sha_1.yaml
+QUERY_PLAYTYPE_NAME: 百位定1
+ANALYZE_PLAYTYPE_NAME: 百位定1
+DINGWEI_SHA_POS: 0
+ENABLE_DINGWEI_SHA: [5]
+LOOKBACK_N: 1
+
+# === 命中条件 ===
+HIT_RANK_LIST: [1]

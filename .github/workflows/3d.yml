@@ -1,4 +1,4 @@
-name: 福彩3D
+name: 福彩3D -策略分析
 
 on:
   workflow_dispatch:

@@ -23,23 +23,36 @@ def parse_int_env(key, default=None):
 # === 加载 config ===
 base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 strategy_path = os.getenv("STRATEGY_CONFIG_PATH")
-yaml_path = os.path.join(base_dir, "config", "3d_config.yaml")
 
 if strategy_path and os.path.exists(strategy_path):
+    # === 批量：先读 base.yaml 再读策略 ===
+    lottery_name = os.getenv("LOTTERY_NAME", "3d")
+    base_path = os.path.join(base_dir, "config", "fixed", lottery_name, "base.yaml")
+    with open(base_path, encoding="utf-8") as f:
+        BASE = yaml.safe_load(f)
+
     with open(strategy_path, encoding="utf-8") as f:
-        CONFIG = yaml.safe_load(f)
+        STRATEGY = yaml.safe_load(f)
+
+    CONFIG = BASE.copy()
+    CONFIG.update(STRATEGY)
+
     print(f"✅ 使用策略配置文件: {strategy_path}")
-    print(CONFIG)  # ✅ 这里也要加
+    # print(CONFIG)
+
 else:
+    # === 单跑 ===
+    yaml_path = os.path.join(base_dir, "config", "3d_config.yaml")
     with open(yaml_path, encoding="utf-8") as f:
         CONFIG = yaml.safe_load(f)
+
     print(f"✅ 使用默认配置文件: {yaml_path}")
-    print(CONFIG)  # ✅ 这里也要加
+    # print(CONFIG)
 
-if "DEFAULTS" in CONFIG:
-    CONFIG = CONFIG["DEFAULTS"]
+    if "DEFAULTS" in CONFIG:
+        CONFIG = CONFIG["DEFAULTS"]
 
-base_path = os.path.join(base_dir, "config", "3d", "base.yaml")
+base_path = os.path.join(base_dir, "config", "fixed", "3d", "base.yaml")
 with open(base_path, encoding="utf-8") as f:
     BASE = yaml.safe_load(f)
 
@@ -101,7 +114,8 @@ query_playtype_name = os.getenv("QUERY_PLAYTYPE_NAME") or CONFIG.get("QUERY_PLAY
 analyze_playtype_name = os.getenv("ANALYZE_PLAYTYPE_NAME") or CONFIG.get("ANALYZE_PLAYTYPE_NAME", "百位定1")
 
 
-hit_rank_list = safe_json_load("HIT_RANK_LIST", [1])
+hit_rank_list = safe_json_load("HIT_RANK_LIST", CONFIG.get("HIT_RANK_LIST", [1]))
+
 hit_count_conditions = safe_json_load("HIT_COUNT_CONDITIONS", {})
 
 lookback_n = parse_int_env("LOOKBACK_N", CONFIG.get("LOOKBACK_N", 0))
@@ -217,8 +231,8 @@ analysis_kwargs = dict(
     reverse_on_tie_dingwei_dan1=reverse_on_tie_dingwei_dan1,
 )
 # ✅ 核心调试点：把最终所有分析参数都打印出来
-for k, v in analysis_kwargs.items():
-    print(f"🟢 {k} = {v}")
+# for k, v in analysis_kwargs.items():
+#     print(f"🟢 {k} = {v}")
 
 print(f"DEBUG: ALL_MODE_LIMIT={os.getenv('ALL_MODE_LIMIT')}, parsed={all_mode_limit}, type={type(all_mode_limit)}")
 assert (all_mode_limit is None or isinstance(all_mode_limit, int)), f"all_mode_limit 类型不对: {all_mode_limit}, type={type(all_mode_limit)}"
@@ -248,7 +262,7 @@ log_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "log"))
 log_pattern = os.path.join(log_dir, "run_3d_*.log")
 log_files = glob.glob(log_pattern)
 if not log_files:
-    print("❌ 未找到任何日志文件，无法推送企业微信")
+    # print("❌ 未找到任何日志文件，无法推送企业微信")
     exit(1)
 
 latest_log = max(log_files, key=os.path.getmtime)

@@ -1,4 +1,4 @@
-name: 排列5
+name: 排列5 -策略分析
 
 on:
   workflow_dispatch:

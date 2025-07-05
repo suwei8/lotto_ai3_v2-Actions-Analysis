@@ -1,4 +1,4 @@
-name: 排列3
+name: 排列3 -策略分析
 
 on:
   workflow_dispatch:
