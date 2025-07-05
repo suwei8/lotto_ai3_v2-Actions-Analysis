@@ -1,11 +1,42 @@
-name: 福彩3D -定位批量杀号
+name: 定位杀号 - 多彩种批量
 
 on:
   workflow_dispatch:
-
+    inputs:
+      LOTTERY:
+        description: "选择彩票类型"
+        required: true
+        type: choice
+        default: "3d"
+        options:
+          - 3d
+          - p3
+          - p5
 jobs:
-  analyze:
+  set-matrix:
     runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.set.outputs.matrix }}
+    steps:
+      - id: set
+        run: |
+          LOTTERY="${{ github.event.inputs.LOTTERY }}"
+          if [[ "$LOTTERY" == "3d" || "$LOTTERY" == "p3" ]]; then
+            POSITIONS='["baiwei","shiwei","gewei"]'
+          elif [[ "$LOTTERY" == "p5" ]]; then
+            POSITIONS='["wanwei","qianwei","baiwei","shiwei","gewei"]'
+          else
+            echo "❌ Unsupported LOTTERY: $LOTTERY"
+            exit 1
+          fi
+
+          echo "matrix={\"lottery\":[\"$LOTTERY\"], \"position\":$POSITIONS}" >> $GITHUB_OUTPUT
+
+  analyze:
+    needs: set-matrix
+    runs-on: ubuntu-latest
+    strategy:
+      matrix: ${{ fromJson(needs.set-matrix.outputs.matrix) }}
     env:
       PYTHONIOENCODING: "utf-8"
       MYSQL_HOST: 127.0.0.1
@@ -18,10 +49,6 @@ jobs:
       GITHUB_RUN_NUMBER: ${{ github.run_number }}
       BACKUP_PASSWORD: ${{ secrets.BACKUP_PASSWORD }}
       MYSQL_ROOT_PASSWORD: ${{ secrets.MYSQL_PASSWORD }}
-
-    strategy:
-      matrix:
-        position: [baiwei, shiwei, gewei]
 
     services:
       mysql:
@@ -82,5 +109,6 @@ jobs:
         run: echo "PYTHONIOENCODING=utf-8" >> $GITHUB_ENV
 
       - name: Run Fixed Batch
-        run: python scripts/run_fixed_batch.py --lottery 3d --position ${{ matrix.position }}
+        run: python scripts/run_fixed_batch.py --lottery ${{ matrix.lottery }} --position ${{ matrix.position }}
+
 
