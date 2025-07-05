@@ -99,7 +99,7 @@ print(f"✅ CHECK_MODE: {check_mode}")
 print(f"✅ LOTTERY_NAME: {lottery_name}")
 print(f"✅ 分析模式: {analysis_mode}")
 print("🚩 到这里没卡死，准备 DB connect")
-print(CONFIG)
+# print(CONFIG)
 # === 初始化 ===
 
 # === 初始化 ===
@@ -263,8 +263,8 @@ analysis_kwargs = dict(
     reverse_on_tie_dingwei_dan1=reverse_on_tie_dingwei_dan1,
 )
 # ✅ 核心调试点：把最终所有分析参数都打印出来
-for k, v in analysis_kwargs.items():
-    print(f"🟢 {k} = {v}")
+# for k, v in analysis_kwargs.items():
+#     print(f"🟢 {k} = {v}")
 
 print(f"DEBUG: ALL_MODE_LIMIT={os.getenv('ALL_MODE_LIMIT')}, parsed={all_mode_limit}, type={type(all_mode_limit)}")
 assert (all_mode_limit is None or isinstance(all_mode_limit, int)), f"all_mode_limit 类型不对: {all_mode_limit}, type={type(all_mode_limit)}"
