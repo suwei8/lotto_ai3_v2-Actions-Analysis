@@ -2,9 +2,18 @@
 import subprocess
 import os
 import glob
+import platform
 
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-VENV_PYTHON = os.path.join(PROJECT_ROOT, '.venv', 'Scripts', 'python.exe')
+
+# ✅ 跨平台处理：GitHub Actions 上用全局 python，本地用虚拟环境
+if os.getenv("GITHUB_ACTIONS", "") == "true":
+    VENV_PYTHON = "python"
+else:
+    if platform.system() == "Windows":
+        VENV_PYTHON = os.path.join(PROJECT_ROOT, '.venv', 'Scripts', 'python.exe')
+    else:
+        VENV_PYTHON = os.path.join(PROJECT_ROOT, '.venv', 'bin', 'python')
 
 CONFIGS = sorted(glob.glob(os.path.join(PROJECT_ROOT, "config/3d/fixed_*.yaml")))
 
