@@ -7,7 +7,7 @@ QUERY_PLAYTYPE_NAME: 个位定1
 ANALYZE_PLAYTYPE_NAME: 个位定1
 
 # === 回溯期数 ===
-#LOOKBACK_N: 6
+LOOKBACK_N: 6
 
 # === 命中条件 ===
 HIT_RANK_LIST: [1,2]

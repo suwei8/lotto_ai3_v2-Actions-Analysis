@@ -1,4 +1,4 @@
-# scripts/run_batch.py
+# scripts/run_fixed_batch.py
 import subprocess
 import os
 import glob
@@ -50,7 +50,7 @@ for config in CONFIGS:
     print(env["STRATEGY_CONFIG_PATH"])
 
     process = subprocess.Popen(
-        [VENV_PYTHON, "scripts/run_3d.py"],
+        [VENV_PYTHON, "scripts/run_fixed.py"],
         env=env,
         cwd=PROJECT_ROOT,
         stdout=subprocess.PIPE,
@@ -136,10 +136,16 @@ pos_map = {
 }
 pos_idx = pos_map.get(POSITION, 0)  # 默认百位
 pos_name_cn = position_name_map.get(pos_idx, POSITION)
-
+LOTTERY_DISPLAY_NAME = {
+    "3d": "福彩3D",
+    "p3": "排列3",
+    "p5": "排列5",
+    "kl8": "快乐8"
+}
 # === 拼装最终消息体 ===
 msg = []
-msg.append(f"【福彩3D-{latest_issue}期-{pos_name_cn}杀号】")
+lottery_cn = LOTTERY_DISPLAY_NAME.get(LOTTERY, LOTTERY)
+msg.append(f"【{lottery_cn}-{latest_issue}期-{pos_name_cn}杀号】")
 msg.append(f"🏷️ Actions 运行编号: #{os.getenv('GITHUB_RUN_NUMBER', '0')}")
 msg.append(f"🏷️ 总分析用时: {hours}小时{minutes}分钟")
 msg.append(f"📦 固定策略配置: {len(CONFIGS)} 个")

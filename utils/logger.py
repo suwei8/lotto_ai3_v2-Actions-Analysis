@@ -11,7 +11,7 @@ def log(*args, sep=" ", end="\n", **kwargs):
     sys.stdout.flush()
     _log_buffer.append(msg)
 
-def init_log_capture(script_name_hint=None):
+def init_log_capture(script_name_hint=None, lottery_name=None):
     global _current_log_file_path
     if script_name_hint is None:
         script_name_hint = "unnamed_script"
@@ -21,11 +21,29 @@ def init_log_capture(script_name_hint=None):
     os.makedirs(log_dir, exist_ok=True)
 
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    base_name = os.path.splitext(script_name_hint)[0]
+
+    # 🚩 如果外面传了 lottery_name，就用它优先；否则用 script 名
+    if lottery_name:
+        lottery_pinyin = lottery_name.lower()
+        if "排列3" in lottery_name or "p3" in lottery_name:
+            lottery_pinyin = "p3"
+        elif "排列5" in lottery_name or "p5" in lottery_name:
+            lottery_pinyin = "p5"
+        elif "福彩3D" in lottery_name or "3d" in lottery_name:
+            lottery_pinyin = "3d"
+        elif "快乐8" in lottery_name or "kl8" in lottery_name:
+            lottery_pinyin = "kl8"
+        base_name = f"run_{lottery_pinyin}_{os.path.splitext(script_name_hint)[0]}"
+    else:
+        base_name = os.path.splitext(script_name_hint)[0]
+
+
     _current_log_file_path = os.path.join(log_dir, f"{base_name}_{timestamp}.log")
 
     _log_buffer.clear()
-    sys.stdout.write(f"📁 当前脚本路径: scripts/{script_name_hint}\n")
+    sys.stdout.write(
+        f"📁 当前脚本路径: scripts/{script_name_hint}，Run #{os.getenv('GITHUB_RUN_NUMBER', '')}\n"
+    )
     sys.stdout.flush()
 
 def save_log_file_if_needed(log_save_mode):
