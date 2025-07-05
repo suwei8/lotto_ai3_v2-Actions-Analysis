@@ -72,6 +72,9 @@ for config in CONFIGS:
     print(f"\n🚀 Running config: {config}")
     env = os.environ.copy()
     env["STRATEGY_CONFIG_PATH"] = config
+    env["LOTTERY"] = LOTTERY
+    env["POSITION"] = POSITION
+
     print(env["STRATEGY_CONFIG_PATH"])
 
     process = subprocess.Popen(
