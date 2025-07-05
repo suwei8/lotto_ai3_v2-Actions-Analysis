@@ -381,8 +381,9 @@ def send_wechat_message(msg):
         print(f"❌ 企业微信消息推送失败: {e}")
 
 print(f"✅ 当前 query_issues: {query_issues}")
-if wechat_api_url and not (len(query_issues) == 1 and query_issues[0] is None):
-    # 有 URL 且不是 [None] 才发送
+
+# 如果 query_issues 不是 'All'，就跳过发送企业微信消息
+if wechat_api_url and query_issues != ["All"]:
     msg_lines = msg_text.splitlines()
     cur_msg = ""
     for line in msg_lines:
@@ -393,4 +394,4 @@ if wechat_api_url and not (len(query_issues) == 1 and query_issues[0] is None):
     if cur_msg.strip():
         send_wechat_message(cur_msg)
 else:
-    print("❌ 未配置 WECHAT_API_URL 或 query_issues 是 None，企业微信消息未发送")
+    print("❌ 未配置 WECHAT_API_URL 或 query_issues 不是 ['All']，企业微信消息未发送")
