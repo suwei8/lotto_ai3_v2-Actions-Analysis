@@ -12,6 +12,19 @@ on:
           - 3d
           - p3
           - p5
+      POSITION:
+        description: "选择定位（默认全部）"
+        required: false
+        type: choice
+        default: "all"
+        options:
+          - all
+          - baiwei
+          - shiwei
+          - gewei
+          - wanwei
+          - qianwei
+
 jobs:
   set-matrix:
     runs-on: ubuntu-latest
@@ -20,17 +33,24 @@ jobs:
     steps:
       - id: set
         run: |
+          POSITION="${{ github.event.inputs.POSITION }}"
           LOTTERY="${{ github.event.inputs.LOTTERY }}"
-          if [[ "$LOTTERY" == "3d" || "$LOTTERY" == "p3" ]]; then
-            POSITIONS='["baiwei","shiwei","gewei"]'
-          elif [[ "$LOTTERY" == "p5" ]]; then
-            POSITIONS='["wanwei","qianwei","baiwei","shiwei","gewei"]'
+
+          if [[ "$POSITION" == "all" ]]; then
+            if [[ "$LOTTERY" == "3d" || "$LOTTERY" == "p3" ]]; then
+              POSITIONS='["baiwei","shiwei","gewei"]'
+            elif [[ "$LOTTERY" == "p5" ]]; then
+              POSITIONS='["wanwei","qianwei","baiwei","shiwei","gewei"]'
+            else
+              echo "❌ Unsupported LOTTERY: $LOTTERY"
+              exit 1
+            fi
           else
-            echo "❌ Unsupported LOTTERY: $LOTTERY"
-            exit 1
+            POSITIONS="[\"$POSITION\"]"
           fi
 
           echo "matrix={\"lottery\":[\"$LOTTERY\"], \"position\":$POSITIONS}" >> $GITHUB_OUTPUT
+
 
   analyze:
     needs: set-matrix
