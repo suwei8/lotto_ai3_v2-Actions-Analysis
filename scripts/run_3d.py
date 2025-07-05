@@ -22,43 +22,10 @@ def parse_int_env(key, default=None):
 
 # === 加载 config ===
 base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-strategy_path = os.getenv("STRATEGY_CONFIG_PATH")
+yaml_path = os.path.join(base_dir, "config", "3d_config.yaml")
 
-if strategy_path and os.path.exists(strategy_path):
-    # === 批量：先读 base.yaml 再读策略 ===
-    lottery_name = os.getenv("LOTTERY_NAME", "3d")
-    base_path = os.path.join(base_dir, "config", "fixed", lottery_name, "base.yaml")
-    with open(base_path, encoding="utf-8") as f:
-        BASE = yaml.safe_load(f)
-
-    with open(strategy_path, encoding="utf-8") as f:
-        STRATEGY = yaml.safe_load(f)
-
-    CONFIG = BASE.copy()
-    CONFIG.update(STRATEGY)
-
-    print(f"✅ 使用策略配置文件: {strategy_path}")
-    # print(CONFIG)
-
-else:
-    # === 单跑 ===
-    yaml_path = os.path.join(base_dir, "config", "3d_config.yaml")
-    with open(yaml_path, encoding="utf-8") as f:
-        CONFIG = yaml.safe_load(f)
-
-    print(f"✅ 使用默认配置文件: {yaml_path}")
-    # print(CONFIG)
-
-    if "DEFAULTS" in CONFIG:
-        CONFIG = CONFIG["DEFAULTS"]
-
-base_path = os.path.join(base_dir, "config", "fixed", "3d", "base.yaml")
-with open(base_path, encoding="utf-8") as f:
-    BASE = yaml.safe_load(f)
-
-for k, v in BASE.items():
-    if k not in CONFIG:
-        CONFIG[k] = v
+with open(yaml_path, encoding="utf-8") as f:
+    CONFIG = yaml.safe_load(f)["DEFAULTS"]
 
 
 # === 统一变量 ===
@@ -75,7 +42,7 @@ enable_hit_check = str(os.getenv("ENABLE_HIT_CHECK") or CONFIG["ENABLE_HIT_CHECK
 
 print(f"✅ CHECK_MODE: {check_mode}")
 print(f"✅ LOTTERY_NAME: {lottery_name}")
-print("🚩 到这里没卡死，准备 DB connect")
+
 # === 初始化 ===
 
 if "__print_original__" not in builtins.__dict__:
@@ -110,18 +77,13 @@ dingwei_sha_pos = parse_int_env("DINGWEI_SHA_POS", 0)
 enable_track_open_rank = str(os.getenv("ENABLE_TRACK_OPEN_RANK") or CONFIG["ENABLE_TRACK_OPEN_RANK"]).lower() == "true"
 log_save_mode = str(os.getenv("LOG_SAVE_MODE") or CONFIG["LOG_SAVE_MODE"]).lower() == "true"
 
-query_playtype_name = os.getenv("QUERY_PLAYTYPE_NAME") or CONFIG.get("QUERY_PLAYTYPE_NAME", "百位定1")
-analyze_playtype_name = os.getenv("ANALYZE_PLAYTYPE_NAME") or CONFIG.get("ANALYZE_PLAYTYPE_NAME", "百位定1")
+query_playtype_name = os.getenv("QUERY_PLAYTYPE_NAME", "百位定1")
+analyze_playtype_name = os.getenv("ANALYZE_PLAYTYPE_NAME", "百位定1")
 
-
-hit_rank_list = safe_json_load("HIT_RANK_LIST", CONFIG.get("HIT_RANK_LIST", [1]))
-
+hit_rank_list = safe_json_load("HIT_RANK_LIST", [1])
 hit_count_conditions = safe_json_load("HIT_COUNT_CONDITIONS", {})
 
-lookback_n = parse_int_env("LOOKBACK_N", CONFIG.get("LOOKBACK_N", 0))
-
-# print(f"🟢 LOOKBACK_N from CONFIG: {CONFIG.get('LOOKBACK_N')}")
-# print(f"🟢 LOOKBACK_N final: {lookback_n}")
+lookback_n = parse_int_env("LOOKBACK_N", 0)
 
 # ENABLE_SHA1 兼容数组或布尔字符串
 enable_sha1_str = os.getenv("ENABLE_SHA1", "[]")
@@ -130,69 +92,44 @@ try:
 except Exception:
     enable_sha1 = enable_sha1_str.lower() == "true"
 
-enable_sha2 = (os.getenv("ENABLE_SHA2") or str(CONFIG.get("ENABLE_SHA2", "False"))).lower() == "true"
-enable_dan1 = (os.getenv("ENABLE_DAN1") or str(CONFIG.get("ENABLE_DAN1", "False"))).lower() == "true"
-enable_dan2 = (os.getenv("ENABLE_DAN2") or str(CONFIG.get("ENABLE_DAN2", "False"))).lower() == "true"
+enable_sha2 = os.getenv("ENABLE_SHA2", "False").lower() == "true"
+enable_dan1 = os.getenv("ENABLE_DAN1", "False").lower() == "true"
+enable_dan2 = os.getenv("ENABLE_DAN2", "False").lower() == "true"
 
-
-enable_dingwei_sha_str = os.getenv("ENABLE_DINGWEI_SHA", None)
-if enable_dingwei_sha_str is None:
-    enable_dingwei_sha = CONFIG.get("ENABLE_DINGWEI_SHA", False)
+enable_dingwei_sha_str = os.getenv("ENABLE_DINGWEI_SHA", "False")
+if enable_dingwei_sha_str in ["True", "False"]:
+    enable_dingwei_sha = enable_dingwei_sha_str == "True"
 else:
-    if enable_dingwei_sha_str in ["True", "False"]:
-        enable_dingwei_sha = enable_dingwei_sha_str == "True"
-    else:
-        try:
-            enable_dingwei_sha = json.loads(enable_dingwei_sha_str)
-        except Exception:
-            enable_dingwei_sha = False
+    try:
+        enable_dingwei_sha = json.loads(enable_dingwei_sha_str)
+    except Exception:
+        enable_dingwei_sha = False
 
+enable_dingwei_sha2 = os.getenv("ENABLE_DINGWEI_SHA2", "False").lower() == "true"
+enable_dingwei_sha3 = os.getenv("ENABLE_DINGWEI_SHA3", "False").lower() == "true"
+enable_dingwei_dan1 = os.getenv("ENABLE_DINGWEI_DAN1", "False").lower() == "true"
 
-enable_dingwei_sha2_str = os.getenv("ENABLE_DINGWEI_SHA2", None)
-if enable_dingwei_sha2_str is None:
-    enable_dingwei_sha2 = CONFIG.get("ENABLE_DINGWEI_SHA2", False)
-else:
-    enable_dingwei_sha2 = enable_dingwei_sha2_str.lower() == "true"
+skip_if_few_sha1 = os.getenv("SKIP_IF_FEW_SHA1", "False").lower() == "true"
+skip_if_few_sha2 = os.getenv("SKIP_IF_FEW_SHA2", "False").lower() == "true"
+skip_if_few_dan1 = os.getenv("SKIP_IF_FEW_DAN1", "False").lower() == "true"
+skip_if_few_dan2 = os.getenv("SKIP_IF_FEW_DAN2", "False").lower() == "true"
+skip_if_few_dingwei_sha = os.getenv("SKIP_IF_FEW_DINGWEI_SHA", "False").lower() == "true"
+skip_if_few_dingwei_sha2 = os.getenv("SKIP_IF_FEW_DINGWEI_SHA2", "False").lower() == "true"
+skip_if_few_dingwei_sha3 = os.getenv("SKIP_IF_FEW_DINGWEI_SHA3", "False").lower() == "true"
 
-enable_dingwei_sha3_str = os.getenv("ENABLE_DINGWEI_SHA3", None)
-if enable_dingwei_sha3_str is None:
-    enable_dingwei_sha3 = CONFIG.get("ENABLE_DINGWEI_SHA3", False)
-else:
-    enable_dingwei_sha3 = enable_dingwei_sha3_str.lower() == "true"
+resolve_tie_mode_sha1 = os.getenv("RESOLVE_TIE_MODE_SHA1", "False")
+resolve_tie_mode_sha2 = os.getenv("RESOLVE_TIE_MODE_SHA2", "False")
+resolve_tie_mode_dan1 = os.getenv("RESOLVE_TIE_MODE_DAN1", "False")
+resolve_tie_mode_dan2 = os.getenv("RESOLVE_TIE_MODE_DAN2", "False")
+resolve_tie_mode_dingwei_sha = os.getenv("RESOLVE_TIE_MODE_DINGWEI_SHA", "False")
+resolve_tie_mode_dingwei_sha2 = os.getenv("RESOLVE_TIE_MODE_DINGWEI_SHA2", "False")
+resolve_tie_mode_dingwei_sha3 = os.getenv("RESOLVE_TIE_MODE_DINGWEI_SHA3", "False")
+resolve_tie_mode_dingwei_dan1 = os.getenv("RESOLVE_TIE_MODE_DINGWEI_DAN1", "False")
 
-enable_dingwei_dan1_str = os.getenv("ENABLE_DINGWEI_DAN1", None)
-if enable_dingwei_dan1_str is None:
-    enable_dingwei_dan1 = CONFIG.get("ENABLE_DINGWEI_DAN1", False)
-else:
-    enable_dingwei_dan1 = enable_dingwei_dan1_str.lower() == "true"
-
-
-# === 以下替换原有的 skip_xxx / resolve_xxx / reverse_xxx 全块 ===
-
-# --- skip_if_few_xxx ---
-skip_if_few_sha1 = (os.getenv("SKIP_IF_FEW_SHA1") or str(CONFIG.get("SKIP_IF_FEW_SHA1", "False"))).lower() == "true"
-skip_if_few_sha2 = (os.getenv("SKIP_IF_FEW_SHA2") or str(CONFIG.get("SKIP_IF_FEW_SHA2", "False"))).lower() == "true"
-skip_if_few_dan1 = (os.getenv("SKIP_IF_FEW_DAN1") or str(CONFIG.get("SKIP_IF_FEW_DAN1", "False"))).lower() == "true"
-skip_if_few_dan2 = (os.getenv("SKIP_IF_FEW_DAN2") or str(CONFIG.get("SKIP_IF_FEW_DAN2", "False"))).lower() == "true"
-skip_if_few_dingwei_sha = (os.getenv("SKIP_IF_FEW_DINGWEI_SHA") or str(CONFIG.get("SKIP_IF_FEW_DINGWEI_SHA", "False"))).lower() == "true"
-skip_if_few_dingwei_sha2 = (os.getenv("SKIP_IF_FEW_DINGWEI_SHA2") or str(CONFIG.get("SKIP_IF_FEW_DINGWEI_SHA2", "False"))).lower() == "true"
-skip_if_few_dingwei_sha3 = (os.getenv("SKIP_IF_FEW_DINGWEI_SHA3") or str(CONFIG.get("SKIP_IF_FEW_DINGWEI_SHA3", "False"))).lower() == "true"
-
-# --- resolve_tie_mode_xxx ---
-resolve_tie_mode_sha1 = os.getenv("RESOLVE_TIE_MODE_SHA1") or CONFIG.get("RESOLVE_TIE_MODE_SHA1", "False")
-resolve_tie_mode_sha2 = os.getenv("RESOLVE_TIE_MODE_SHA2") or CONFIG.get("RESOLVE_TIE_MODE_SHA2", "False")
-resolve_tie_mode_dan1 = os.getenv("RESOLVE_TIE_MODE_DAN1") or CONFIG.get("RESOLVE_TIE_MODE_DAN1", "False")
-resolve_tie_mode_dan2 = os.getenv("RESOLVE_TIE_MODE_DAN2") or CONFIG.get("RESOLVE_TIE_MODE_DAN2", "False")
-resolve_tie_mode_dingwei_sha = os.getenv("RESOLVE_TIE_MODE_DINGWEI_SHA") or CONFIG.get("RESOLVE_TIE_MODE_DINGWEI_SHA", "False")
-resolve_tie_mode_dingwei_sha2 = os.getenv("RESOLVE_TIE_MODE_DINGWEI_SHA2") or CONFIG.get("RESOLVE_TIE_MODE_DINGWEI_SHA2", "False")
-resolve_tie_mode_dingwei_sha3 = os.getenv("RESOLVE_TIE_MODE_DINGWEI_SHA3") or CONFIG.get("RESOLVE_TIE_MODE_DINGWEI_SHA3", "False")
-resolve_tie_mode_dingwei_dan1 = os.getenv("RESOLVE_TIE_MODE_DINGWEI_DAN1") or CONFIG.get("RESOLVE_TIE_MODE_DINGWEI_DAN1", "False")
-
-# --- reverse_on_tie_xxx ---
-reverse_on_tie_dingwei_sha = (os.getenv("REVERSE_ON_TIE_DINGWEI_SHA") or str(CONFIG.get("REVERSE_ON_TIE_DINGWEI_SHA", "False"))).lower() == "true"
-reverse_on_tie_dingwei_sha2 = (os.getenv("REVERSE_ON_TIE_DINGWEI_SHA2") or str(CONFIG.get("REVERSE_ON_TIE_DINGWEI_SHA2", "False"))).lower() == "true"
-reverse_on_tie_dingwei_sha3 = (os.getenv("REVERSE_ON_TIE_DINGWEI_SHA3") or str(CONFIG.get("REVERSE_ON_TIE_DINGWEI_SHA3", "False"))).lower() == "true"
-reverse_on_tie_dingwei_dan1 = (os.getenv("REVERSE_ON_TIE_DINGWEI_DAN1") or str(CONFIG.get("REVERSE_ON_TIE_DINGWEI_DAN1", "False"))).lower() == "true"
+reverse_on_tie_dingwei_sha = os.getenv("REVERSE_ON_TIE_DINGWEI_SHA", "False").lower() == "true"
+reverse_on_tie_dingwei_sha2 = os.getenv("REVERSE_ON_TIE_DINGWEI_SHA2", "False").lower() == "true"
+reverse_on_tie_dingwei_sha3 = os.getenv("REVERSE_ON_TIE_DINGWEI_SHA3", "False").lower() == "true"
+reverse_on_tie_dingwei_dan1 = os.getenv("REVERSE_ON_TIE_DINGWEI_DAN1", "False").lower() == "true"
 
 analysis_kwargs = dict(
     query_playtype_name=query_playtype_name,
@@ -230,13 +167,9 @@ analysis_kwargs = dict(
     reverse_on_tie_dingwei_sha3=reverse_on_tie_dingwei_sha3,
     reverse_on_tie_dingwei_dan1=reverse_on_tie_dingwei_dan1,
 )
-# ✅ 核心调试点：把最终所有分析参数都打印出来
-# for k, v in analysis_kwargs.items():
-#     print(f"🟢 {k} = {v}")
-
 print(f"DEBUG: ALL_MODE_LIMIT={os.getenv('ALL_MODE_LIMIT')}, parsed={all_mode_limit}, type={type(all_mode_limit)}")
 assert (all_mode_limit is None or isinstance(all_mode_limit, int)), f"all_mode_limit 类型不对: {all_mode_limit}, type={type(all_mode_limit)}"
-print("🚩 准备开始 run_hit_analysis_batch()")
+
 run_hit_analysis_batch(
     conn=conn,
     lottery_name=lottery_name,
@@ -250,7 +183,7 @@ run_hit_analysis_batch(
 )
 
 
-save_log_file_if_needed(log_save_mode)
+save_log_file_if_needed(log_save_mode, script_name_hint=os.path.basename(__file__))
 import time; time.sleep(1)
 
 import re
@@ -262,7 +195,7 @@ log_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "log"))
 log_pattern = os.path.join(log_dir, "run_3d_*.log")
 log_files = glob.glob(log_pattern)
 if not log_files:
-    # print("❌ 未找到任何日志文件，无法推送企业微信")
+    print("❌ 未找到任何日志文件，无法推送企业微信")
     exit(1)
 
 latest_log = max(log_files, key=os.path.getmtime)
