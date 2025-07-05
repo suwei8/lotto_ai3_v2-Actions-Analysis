@@ -24,7 +24,9 @@ on:
           - gewei
           - wanwei
           - qianwei
-
+      CONFIG_FILE:
+        description: "选择要单独执行的配置文件（可选）"
+        required: false
 jobs:
   set-matrix:
     runs-on: ubuntu-latest
@@ -69,7 +71,7 @@ jobs:
       GITHUB_RUN_NUMBER: ${{ github.run_number }}
       BACKUP_PASSWORD: ${{ secrets.BACKUP_PASSWORD }}
       MYSQL_ROOT_PASSWORD: ${{ secrets.MYSQL_PASSWORD }}
-
+      CONFIG_FILE: ${{ github.event.inputs.CONFIG_FILE }}
     services:
       mysql:
         image: mysql:8.0

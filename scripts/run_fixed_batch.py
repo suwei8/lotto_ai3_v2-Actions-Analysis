@@ -19,6 +19,8 @@ args = parser.parse_args()
 
 LOTTERY = args.lottery
 POSITION = args.position
+# ✅ 新增：读取 GitHub Actions 的 CONFIG_FILE
+CONFIG_FILE = os.getenv("CONFIG_FILE", "").strip()
 
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
@@ -31,13 +33,26 @@ else:
     else:
         VENV_PYTHON = os.path.join(PROJECT_ROOT, '.venv', 'bin', 'python')
 
-# ✅ 路径按参数动态拼接
-CONFIGS = sorted(glob.glob(
-    os.path.join(PROJECT_ROOT, f"config/fixed/{LOTTERY}/{POSITION}/sha_*.yaml")
-))
-start_time = time.time()
+# ✅ CONFIGS 获取逻辑
+if CONFIG_FILE:
+    config_path = os.path.join(PROJECT_ROOT, f"config/fixed/{LOTTERY}/{POSITION}/{CONFIG_FILE}")
+    if not os.path.exists(config_path):
+        print(f"❌ 指定的 CONFIG_FILE 不存在: {config_path}")
+        exit(1)
+    CONFIGS = [config_path]
+else:
+    # 否则走批量
+    CONFIGS = sorted(glob.glob(
+        os.path.join(PROJECT_ROOT, f"config/fixed/{LOTTERY}/{POSITION}/sha_*.yaml")
+    ))
 
-print(f"✅ [{LOTTERY}-{POSITION}] 扫描到 {len(CONFIGS)} 个固定策略配置：")
+start_time = time.time()
+# 输出提示更清晰
+if CONFIG_FILE:
+    print(f"✅ [{LOTTERY}-{POSITION}] 执行单个配置文件：{CONFIGS[0]}")
+else:
+    print(f"✅ [{LOTTERY}-{POSITION}] 扫描到 {len(CONFIGS)} 个固定策略配置：")
+
 for c in CONFIGS:
     print(f" - {c}")
 
