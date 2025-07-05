@@ -1,23 +1,24 @@
 # config/fixed/3d/gewei/sha_2.yaml
 #  独立玩法推荐取值策略配置
 # === 定位杀号位置 ===
-ANALYSIS_MODE: hitcount
+#ANALYSIS_MODE: hitcount
 DINGWEI_SHA_POS: 1
 
 QUERY_PLAYTYPE_NAME: 十位定1
 ANALYZE_PLAYTYPE_NAME: 十位定1
 
 # === 回溯期数 ===
-LOOKBACK_N: 1
+LOOKBACK_N: None
 
 # === 命中条件 ===
-HIT_RANK_LIST: []
-HIT_COUNT_CONDITIONS: {"十位定1": ("==", 0)}
+HIT_RANK_LIST: [1,2]
+#HIT_COUNT_CONDITIONS: {"十位定1": ("==", 0)}
+
 # === 取值配置 ===
-ENABLE_DINGWEI_SHA: [3]
+ENABLE_DINGWEI_SHA: [-1]
 
 # ✅ 推荐数少于5时跳过行为
-#SKIP_IF_FEW_DINGWEI_SHA: True
+SKIP_IF_FEW_DINGWEI_SHA: Next
 
 # ✅ 控制每个策略的“频次并列”行为
-#RESOLVE_TIE_MODE_DINGWEI_SHA: Next
+RESOLVE_TIE_MODE_DINGWEI_SHA: True
