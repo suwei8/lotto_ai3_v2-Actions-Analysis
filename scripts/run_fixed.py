@@ -383,7 +383,7 @@ def send_wechat_message(msg):
 print(f"✅ 当前 query_issues: {query_issues}")
 
 # 如果 query_issues 不是 'All'，就跳过发送企业微信消息
-if wechat_api_url and query_issues != ["All"]:
+if query_issues == ["All"]:
     msg_lines = msg_text.splitlines()
     cur_msg = ""
     for line in msg_lines:

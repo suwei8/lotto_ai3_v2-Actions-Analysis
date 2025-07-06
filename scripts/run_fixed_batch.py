@@ -203,7 +203,7 @@ def send_wechat_message(msg):
     except Exception as e:
         print(f"❌ 企业微信消息推送失败: {e}")
 
-if query_issues == ["All"]:
+if query_issues == [None]:
     if wechat_api_url:
         msg_lines = msg_text.splitlines()
         cur_msg = ""
