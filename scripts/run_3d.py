@@ -182,8 +182,8 @@ run_hit_analysis_batch(
     analysis_kwargs=analysis_kwargs
 )
 
+save_log_file_if_needed(log_save_mode)
 
-save_log_file_if_needed(log_save_mode, script_name_hint=os.path.basename(__file__))
 import time; time.sleep(1)
 
 import re
