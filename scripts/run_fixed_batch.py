@@ -203,8 +203,7 @@ def send_wechat_message(msg):
     except Exception as e:
         print(f"❌ 企业微信消息推送失败: {e}")
 
-# ✅ 只要是【实战模式】，即 query_issues = [None] 就发
-if query_issues != ["All"]:
+if query_issues == ["All"]:
     if wechat_api_url:
         msg_lines = msg_text.splitlines()
         cur_msg = ""
@@ -218,4 +217,4 @@ if query_issues != ["All"]:
     else:
         print("❌ 未配置 WECHAT_API_URL，企业微信消息未发送")
 else:
-    print(f"🟢 【回测模式】【已跳过：批量汇总消息发送】，query_issues={query_issues}")
+    print(f"🟢 【实战模式】【已跳过：批量汇总消息发送】，query_issues={query_issues}")
