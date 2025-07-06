@@ -15,7 +15,7 @@ HIT_RANK_LIST: [-1]
 #HIT_COUNT_CONDITIONS: {"十位定1": ("==", 0)}
 
 # === 取值配置 ===
-ENABLE_DINGWEI_SHA: [5]
+ENABLE_DINGWEI_SHA: [6]
 
 # ✅ 推荐数少于5时跳过行为
 SKIP_IF_FEW_DINGWEI_SHA: Next

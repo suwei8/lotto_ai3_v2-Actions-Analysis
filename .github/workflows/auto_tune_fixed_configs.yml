@@ -1,0 +1,34 @@
+name: Auto Tune Fixed Configs
+
+on:
+  workflow_dispatch:
+
+jobs:
+  tune-configs:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 检出仓库
+        uses: actions/checkout@v4
+
+      - name: 设置 Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: 安装依赖
+        run: |
+          python -m pip install --upgrade pip
+          pip install pyyaml
+
+      - name: 执行策略配置调优
+        run: |
+          python scripts/auto_tune_fixed_configs.py --dry-run
+
+      - name: 提交更新
+        if: github.event_name == 'workflow_dispatch'
+        run: |
+          git config --global user.name "GitHub Actions"
+          git config --global user.email "actions@github.com"
+          git add config/fixed/**/*.yaml
+          git commit -m "🔧 自动调优固定策略配置" || echo "No changes to commit"
+          git push

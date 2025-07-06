@@ -15,7 +15,7 @@ LOOKBACK_N: 2
 HIT_COUNT_CONDITIONS: {"十位定1": ("==", 0)}
 
 # === 取值配置 ===
-ENABLE_DINGWEI_SHA: ["prev+1,1"]
+ENABLE_DINGWEI_SHA: [10]
 
 # ✅ 推荐数少于5时跳过行为
 #SKIP_IF_FEW_DINGWEI_SHA: True
