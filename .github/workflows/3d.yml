@@ -227,8 +227,8 @@ jobs:
           GITHUB_RUN_NUMBER: ${{ github.run_number }}
 
 
-        # run: python scripts/run_p5.py
-        run: python scripts/run_3d.py > /dev/null 2>&1
+        run: python scripts/run_3d.py
+        # run: python scripts/run_3d.py > /dev/null 2>&1
 
       - name: Organize log into p5 folder
         run: |
