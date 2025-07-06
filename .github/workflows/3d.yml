@@ -161,6 +161,8 @@ jobs:
 #          ls -l data/
 
       - name: Download latest database backup (auto)
+        env:
+          BACKUP_PASSWORD: ${{ secrets.BACKUP_PASSWORD }}
         run: |
           mkdir -p data
           
@@ -169,15 +171,15 @@ jobs:
           
           # Parse URL
           # DOWNLOAD_URL=$(echo $LATEST_JSON | jq -r '.assets[] | select(.name | endswith("_backup.zip")) | .browser_download_url')
-           DOWNLOAD_URL="https://github.com/suwei8/lotto_ai3_v2-Backup_data/releases/download/backup-3d-20250706/lotto_3d_20250706_backup.zip"
+          DOWNLOAD_URL="https://github.com/suwei8/lotto_ai3_v2-Backup_data/releases/download/backup-3d-20250706/lotto_3d_20250706_backup.zip"
           
-          
-               echo "✅ Latest backup URL: $DOWNLOAD_URL"
+          echo "✅ Latest backup URL: $DOWNLOAD_URL"
           
           wget -O data/lotto_backup.zip "$DOWNLOAD_URL"
           
           unzip -P "$BACKUP_PASSWORD" -o data/lotto_backup.zip -d data/
           ls -l data/
+            
 
       - name: Decompress SQL gzip
         run: |
