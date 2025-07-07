@@ -739,7 +739,8 @@ def run_hit_analysis_batch(
         analysis_kwargs: dict,
         stop_flag_key="stop_analysis",  # ✅ 新增参数
         log_callback=None,  # ✅ 新增参数
-        all_mode_limit: int = None
+        all_mode_limit: int = None,
+        strategy_relative_path=None   # ✅ 新增
 ):
     """
     分析指定多个期号的杀号/胆码/定位杀号效果，并支持命中率与推荐数字排名统计。
@@ -871,7 +872,7 @@ def run_hit_analysis_batch(
         hit_count = total_issues - miss_count - skip_count
         print(f"📉 共 {total_issues} 期，未命中次数：{miss_count} 期，跳过 {skip_count} 期")
         print(f"✅ 命中率：{hit_count} / {total_issues}")
-
+        print(f"策略配置文件：{strategy_relative_path}")   # ✅ 直接一起 print
     if enable_track_open_rank:
         print("📊 开奖号码在推荐数字频次排序中的排名统计：")
         # 用max_rank_length，而不是max(open_rank_counter.keys())

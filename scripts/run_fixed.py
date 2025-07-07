@@ -29,18 +29,19 @@ base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 strategy_path = os.getenv("STRATEGY_CONFIG_PATH")
 
 # === 多彩种 base.yaml 自动路径 ===
+# === 多彩种 base.yaml 自动路径 ===
 if strategy_path and os.path.exists(strategy_path):
     with open(strategy_path, encoding="utf-8") as f:
         STRATEGY = yaml.safe_load(f)
 
-    # ✅ 这里，先获取正确的 lottery_dir （p3 / 3d / kl8）
+    # 先获取正确的 lottery_dir （p3 / 3d / kl8）
     lottery_dir = os.path.basename(
         os.path.dirname(
             os.path.dirname(strategy_path)
         )
     )
 
-    # ✅ 这里改为用 lottery_dir 拼 base.yaml
+    # 拼 base.yaml
     base_path = os.path.join(base_dir, "config", "fixed", lottery_dir, "base.yaml")
     with open(base_path, encoding="utf-8") as f:
         BASE = yaml.safe_load(f)
@@ -50,14 +51,18 @@ if strategy_path and os.path.exists(strategy_path):
     CONFIG = BASE.copy()
     CONFIG.update(STRATEGY)
 
-    # ✅ 这里是中文名
+    # 中文名
     lottery_name = CONFIG.get("LOTTERY_NAME", "3d")
 
     print(f"✅ 使用策略配置文件: {strategy_path}")
     print(f"✅ base.yaml 路径: {base_path}")
 
+    # ✅ 提前定义 relative_path
+    parts = strategy_path.replace("\\", "/").split("/config/fixed/", 1)
+    relative_path = parts[-1] if len(parts) > 1 else strategy_path
+
 else:
-    # --- 单跑执行 ---
+    # 单跑执行
     yaml_path = os.path.join(base_dir, "config", "3d_config.yaml")
     with open(yaml_path, encoding="utf-8") as f:
         CONFIG = yaml.safe_load(f)
@@ -66,20 +71,20 @@ else:
 
     print(f"✅ 使用默认配置文件: {yaml_path}")
 
-
-    # 这里才读固定 base
     base_path = os.path.join(base_dir, "config", "fixed", "3d", "base.yaml")
     with open(base_path, encoding="utf-8") as f:
         BASE = yaml.safe_load(f)
     if "DEFAULTS" in BASE:
         BASE = BASE["DEFAULTS"]
 
-    # 只补充没有的
     for k, v in BASE.items():
         if k not in CONFIG:
             CONFIG[k] = v
 
     print(f"✅ base.yaml 路径: {base_path}")
+
+    # ✅ 这里不需要 base.yaml 做路径 — 直接置空或占位
+    relative_path = None   # 或者 relative_path = "*"
 
 
 
@@ -279,7 +284,9 @@ run_hit_analysis_batch(
     enable_track_open_rank=enable_track_open_rank,
     dingwei_sha_pos=dingwei_sha_pos,
     check_mode=check_mode,
-    analysis_kwargs=analysis_kwargs
+    analysis_kwargs=analysis_kwargs,
+    strategy_relative_path=relative_path   # ✅ 新增传入
+
 )
 
 

@@ -129,11 +129,11 @@ jobs:
           mkdir -p data
           
           # Get latest release info
-           LATEST_JSON=$(curl -s https://api.github.com/repos/suwei8/lotto_ai3_v2-Backup_data/releases/latest)
+#           LATEST_JSON=$(curl -s https://api.github.com/repos/suwei8/lotto_ai3_v2-Backup_data/releases/latest)
           
           # Parse URL
-          # DOWNLOAD_URL="https://github.com/suwei8/lotto_ai3_v2-Backup_data/releases/download/test/lotto_ai3_v2-mini3d.zip"
-          DOWNLOAD_URL=$(echo $LATEST_JSON | jq -r '.assets[] | select(.name | endswith("_backup.zip")) | .browser_download_url')
+           DOWNLOAD_URL="https://github.com/suwei8/lotto_ai3_v2-Backup_data/releases/download/test/lotto_ai3_v2-mini3d.zip"
+#          DOWNLOAD_URL=$(echo $LATEST_JSON | jq -r '.assets[] | select(.name | endswith("_backup.zip")) | .browser_download_url')
                
           echo "✅ Latest backup URL: $DOWNLOAD_URL"
           
