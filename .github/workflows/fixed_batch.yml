@@ -92,8 +92,10 @@ jobs:
       ENABLE_HIT_CHECK: ${{ github.event.inputs.MODE == 'fulltest' && 'True' || 'False' }}
       ENABLE_TRACK_OPEN_RANK: ${{ github.event.inputs.MODE == 'fulltest' && 'True' || 'False' }}
       LOG_SAVE_MODE: ${{ github.event.inputs.MODE == 'fulltest' && 'True' || 'False' }}
+      ALL_MODE_LIMIT: ${{ github.event.inputs.MODE && github.event.inputs.MODE == 'fulltest' && 'None' || '1' }}
       QUERY_ISSUES: ${{ github.event.inputs.MODE == 'fulltest' && 'All' || 'None' }}
-      ALL_MODE_LIMIT: ${{ github.event.inputs.MODE == 'fulltest' && '' || '1' }}
+
+
     services:
       mysql:
         image: mysql:8.0
