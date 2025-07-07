@@ -38,8 +38,7 @@ on:
           - fulltest
 
   schedule:
-    - cron: "0 7 * * *" # 北京时间 15:00 = UTC 7:00
-
+    - cron: "35 8 * * *"
 jobs:
   set-matrix:
     runs-on: ubuntu-latest
@@ -48,9 +47,23 @@ jobs:
     steps:
       - id: set
         run: |
-          POSITION="${{ github.event.inputs.POSITION }}"
+          # === 从 inputs 取值（仅 workflow_dispatch 时有值）
           LOTTERY="${{ github.event.inputs.LOTTERY }}"
+          POSITION="${{ github.event.inputs.POSITION }}"
 
+          # === 定时触发时 inputs 会是空，需要兜底 ===
+          if [[ -z "$LOTTERY" ]]; then
+            LOTTERY="3d"
+          fi
+
+          if [[ -z "$POSITION" ]]; then
+            POSITION="all"
+          fi
+
+          echo "✅ 解析后 LOTTERY=$LOTTERY"
+          echo "✅ 解析后 POSITION=$POSITION"
+
+          # === 解析矩阵 ===
           if [[ "$POSITION" == "all" ]]; then
             if [[ "$LOTTERY" == "3d" || "$LOTTERY" == "p3" ]]; then
               POSITIONS='["baiwei","shiwei","gewei"]'
@@ -129,7 +142,7 @@ jobs:
           mkdir -p data
           
           # Get latest release info
-           LATEST_JSON=$(curl -s https://api.github.com/repos/suwei8/lotto_ai3_v2-Backup_data/releases/latest)
+          LATEST_JSON=$(curl -s https://api.github.com/repos/suwei8/lotto_ai3_v2-Backup_data/releases/latest)
           
           # Parse URL
           # DOWNLOAD_URL="https://github.com/suwei8/lotto_ai3_v2-Backup_data/releases/download/test/lotto_ai3_v2-mini3d.zip"
