@@ -38,7 +38,7 @@ on:
           - fulltest
 
   schedule:
-    - cron: "0 8 * * *" # 北京时间 16:00 = UTC 8:00
+    - cron: "0 7 * * *" # 北京时间 15:00 = UTC 7:00
 
 jobs:
   set-matrix:
