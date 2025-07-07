@@ -93,7 +93,7 @@ jobs:
       ENABLE_TRACK_OPEN_RANK: ${{ github.event.inputs.MODE == 'fulltest' && 'True' || 'False' }}
       LOG_SAVE_MODE: ${{ github.event.inputs.MODE == 'fulltest' && 'True' || 'False' }}
       QUERY_ISSUES: ${{ github.event.inputs.MODE == 'fulltest' && 'All' || 'None' }}
-      ALL_MODE_LIMIT: ${{ github.event.inputs.MODE == 'fulltest' && 'None' || '1' }}
+      ALL_MODE_LIMIT: ${{ github.event.inputs.MODE == 'fulltest' && '' || '1' }}
     services:
       mysql:
         image: mysql:8.0
