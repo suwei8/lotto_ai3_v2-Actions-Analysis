@@ -4,10 +4,10 @@ on:
   workflow_dispatch:
     inputs:
       POSITION:
-        description: "选择定位位（可选）"
+        description: "选择 P5 定位（默认全部）"
         required: false
-        default: "all"
         type: choice
+        default: "all"
         options:
           - all
           - wanwei
@@ -16,21 +16,47 @@ on:
           - shiwei
           - gewei
 
+  schedule:
+    - cron: "0 7 * * *" # UTC 07:00 = 北京时间 15:00
+
 jobs:
+  set-matrix:
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.set.outputs.matrix }}
+    steps:
+      - id: set
+        run: |
+          POSITION="${{ github.event.inputs.POSITION }}"
+
+          if [[ -z "$POSITION" ]]; then
+            POSITION="all"
+          fi
+
+          echo "✅ 解析后 POSITION=$POSITION"
+
+          if [[ "$POSITION" == "all" ]]; then
+            POSITIONS='["wanwei","qianwei","baiwei","shiwei","gewei"]'
+          else
+            POSITIONS="[\"$POSITION\"]"
+          fi
+
+          echo "matrix={\"position\":$POSITIONS}" >> $GITHUB_OUTPUT
+
   generate:
+    needs: set-matrix
     runs-on: ubuntu-latest
     strategy:
-      matrix:
-        position: ${{ fromJson('["wanwei","qianwei","baiwei","shiwei","gewei"]') }}
-
+      matrix: ${{ fromJson(needs.set-matrix.outputs.matrix) }}
     env:
       MYSQL_HOST: 127.0.0.1
       MYSQL_PORT: 3306
       MYSQL_USER: root
       MYSQL_PASSWORD: ${{ secrets.MYSQL_PASSWORD }}
       MYSQL_DATABASE: ${{ secrets.MYSQL_DATABASE }}
+      MYSQL_ROOT_PASSWORD: ${{ secrets.MYSQL_PASSWORD }}
       BACKUP_PASSWORD: ${{ secrets.BACKUP_PASSWORD }}
-      PYTHONIOENCODING: utf-8
+      PYTHONIOENCODING: "utf-8"
 
     services:
       mysql:
@@ -50,42 +76,52 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Debug Timezone Info
+        run: |
+          echo "==== 🕒 当前时间检查 ===="
+          echo "✅ 当前 UTC 时间: $(date -u '+%Y-%m-%d %H:%M:%S')"
+          echo "✅ 当前 北京时间: $(TZ='Asia/Shanghai' date '+%Y-%m-%d %H:%M:%S')"
+          echo "========================"
+
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
 
-      - name: Install Requirements
+      - name: Install Python Dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: Restore Database
+      - name: Download latest DB Backup
         run: |
           mkdir -p data
           LATEST_JSON=$(curl -s https://api.github.com/repos/suwei8/lotto_ai3_v2-Backup_data/releases/latest)
           DOWNLOAD_URL=$(echo $LATEST_JSON | jq -r '.assets[] | select(.name | endswith("_backup.zip")) | .browser_download_url')
+          echo "✅ Latest backup URL: $DOWNLOAD_URL"
           wget -O data/lotto_backup.zip "$DOWNLOAD_URL"
+          sleep 1
           unzip -P "$BACKUP_PASSWORD" -o data/lotto_backup.zip -d data/
+          ls -l data/
+
+      - name: Decompress SQL gzip
+        run: |
           gunzip -f data/*.sql.gz || true
+
+      - name: Restore MySQL Database
+        run: |
           chmod +x scripts/restore_db.sh
           ./scripts/restore_db.sh
 
-      - name: Run P5 YAML Generator
+      - name: Generate P5 YAML
         run: |
-          POSITION_INPUT=${{ github.event.inputs.POSITION }}
-          if [[ "$POSITION_INPUT" == "all" || -z "$POSITION_INPUT" ]]; then
-            POSITION_ARG=${{ matrix.position }}
-          else
-            POSITION_ARG=$POSITION_INPUT
-          fi
-          echo "Running: python scripts/generate_p5_yaml.py $POSITION_ARG"
-          python scripts/generate_p5_yaml.py $POSITION_ARG
+          echo "✅ 执行生成器，位置: ${{ matrix.position }}"
+          python scripts/generate_p5_yaml.py ${{ matrix.position }}
 
-      - name: Commit & Push
+      - name: Commit & Push YAML
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add config/fixed/p5/
-          git commit -m "🤖 自动生成 P5 YAML" || echo "No changes"
+          git commit -m "🤖 自动生成 P5 YAML (${{ matrix.position }})" || echo "No changes"
           git push
