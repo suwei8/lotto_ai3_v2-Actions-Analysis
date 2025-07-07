@@ -228,7 +228,7 @@ jobs:
 
 
         # run: python scripts/run_p5.py
-        run: python scripts/run_p5.py > /dev/null 2>&1
+        run: python scripts/run_p5.py
 
       - name: Organize log into p5 folder
         run: |
