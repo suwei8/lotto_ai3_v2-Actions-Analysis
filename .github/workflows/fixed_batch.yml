@@ -38,7 +38,8 @@ on:
           - fulltest
 
   schedule:
-    - cron: "35 8 * * *"
+    - cron: "0 15 * * *"
+    # UTC 时间 15:00 ➜ 北京时间 23:00
 jobs:
   set-matrix:
     runs-on: ubuntu-latest
