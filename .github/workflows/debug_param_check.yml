@@ -21,6 +21,13 @@ jobs:
       - name: 📥 检出仓库
         uses: actions/checkout@v4
 
+      - name: Debug Timezone Info
+        run: |
+          echo "==== 🕒 当前时间检查 ===="
+          echo "✅ 当前 UTC 时间: $(date -u '+%Y-%m-%d %H:%M:%S')"
+          echo "✅ 当前 北京时间: $(TZ='Asia/Shanghai' date '+%Y-%m-%d %H:%M:%S')"
+          echo "========================"
+
       - name: 🐍 设置 Python 3.11
         uses: actions/setup-python@v5
         with:
