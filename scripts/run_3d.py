@@ -32,6 +32,7 @@ with open(yaml_path, encoding="utf-8") as f:
 check_mode = os.getenv("CHECK_MODE") or "dingwei"
 lottery_name = os.getenv("LOTTERY_NAME") or CONFIG["LOTTERY_NAME"]
 analysis_mode = os.getenv("ANALYSIS_MODE") or CONFIG["ANALYSIS_MODE"]
+QUERY_ISSUES = os.getenv("QUERY_ISSUES") or CONFIG["QUERY_ISSUES"]
 # 先强制 config 默认值变成 NoneType
 _config_limit = CONFIG.get("ALL_MODE_LIMIT", None)
 if _config_limit in ("None", ""):
@@ -42,7 +43,7 @@ enable_hit_check = str(os.getenv("ENABLE_HIT_CHECK") or CONFIG["ENABLE_HIT_CHECK
 
 print(f"✅ CHECK_MODE: {check_mode}")
 print(f"✅ LOTTERY_NAME: {lottery_name}")
-
+print(f"✅ QUERY_ISSUES: {QUERY_ISSUES}")
 # === 初始化 ===
 
 if "__print_original__" not in builtins.__dict__:

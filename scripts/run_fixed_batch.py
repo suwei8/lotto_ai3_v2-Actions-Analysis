@@ -7,6 +7,7 @@ import re
 import requests
 import argparse
 import time
+import yaml
 
 from dotenv import load_dotenv
 load_dotenv()
@@ -17,21 +18,31 @@ parser.add_argument("--lottery", type=str, default="3d", help="彩种，如 3d /
 parser.add_argument("--position", type=str, required=True, help="位置，如 baiwei / shiwei / gewei")
 args = parser.parse_args()
 
-query_issues_str = os.getenv("QUERY_ISSUES") or "None"
+
+LOTTERY = args.lottery
+POSITION = args.position
+
+PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))  # ✅ 必须先有
+
+# ✅ 加载 base.yaml
+base_yaml_path = os.path.join(PROJECT_ROOT, f"config/fixed/{LOTTERY}/base.yaml")
+with open(base_yaml_path, encoding="utf-8") as f:
+    BASE = yaml.safe_load(f)
+
+# ✅ QUERY_ISSUES：先从 .env 拿，没有就用 base.yaml
+query_issues_str = os.getenv("QUERY_ISSUES") or str(BASE.get("QUERY_ISSUES", "None"))
+
 if query_issues_str == "None":
     query_issues = [None]
 elif query_issues_str == "All":
     query_issues = ["All"]
 else:
     query_issues = query_issues_str.split(",")
-print(f"❓ 当前 query_issues 的值: {query_issues}")
 
+print(f"✅ 当前 query_issues: {query_issues}")
 
-LOTTERY = args.lottery
-POSITION = args.position
 # ✅ 新增：读取 GitHub Actions 的 CONFIG_FILE
 CONFIG_FILE = os.getenv("CONFIG_FILE", "").strip()
-
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 # ✅ 跨平台 Python
@@ -203,6 +214,8 @@ def send_wechat_message(msg):
     except Exception as e:
         print(f"❌ 企业微信消息推送失败: {e}")
 
+print(f"✅ 当前 query_issues: {query_issues}")
+
 if query_issues == [None]:
     if wechat_api_url:
         msg_lines = msg_text.splitlines()
@@ -217,4 +230,4 @@ if query_issues == [None]:
     else:
         print("❌ 未配置 WECHAT_API_URL，企业微信消息未发送")
 else:
-    print(f"🟢 【实战模式】【已跳过：批量汇总消息发送】，query_issues={query_issues}")
+    print(f"🟢 【run_fixed_batch.py】query_issues={query_issues}，已跳过批量汇总发送")

@@ -380,18 +380,21 @@ def send_wechat_message(msg):
     except Exception as e:
         print(f"❌ 企业微信消息推送失败: {e}")
 
+
 print(f"✅ 当前 query_issues: {query_issues}")
 
-# 如果 query_issues 不是 'All'，就跳过发送企业微信消息
 if query_issues == ["All"]:
-    msg_lines = msg_text.splitlines()
-    cur_msg = ""
-    for line in msg_lines:
-        if len(cur_msg) + len(line) + 1 > MAX_LEN:
+    if wechat_api_url:
+        msg_lines = msg_text.splitlines()
+        cur_msg = ""
+        for line in msg_lines:
+            if len(cur_msg) + len(line) + 1 > MAX_LEN:
+                send_wechat_message(cur_msg)
+                cur_msg = ""
+            cur_msg += (line + "\n")
+        if cur_msg.strip():
             send_wechat_message(cur_msg)
-            cur_msg = ""
-        cur_msg += (line + "\n")
-    if cur_msg.strip():
-        send_wechat_message(cur_msg)
+    else:
+        print("❌ 未配置 WECHAT_API_URL，企业微信消息未发送")
 else:
-    print("❌ 未配置 WECHAT_API_URL 或 query_issues 不是 ['All']，企业微信消息未发送")
+    print(f"🟢 【run_fixed.py】query_issues={query_issues}，已跳过发送")

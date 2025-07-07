@@ -27,6 +27,19 @@ on:
       CONFIG_FILE:
         description: "选择要单独执行的配置文件（可选）"
         required: false
+
+      MODE:
+        description: "执行模式"
+        required: true
+        type: choice
+        default: "latest"
+        options:
+          - latest
+          - fulltest
+
+  schedule:
+    - cron: "0 8 * * *" # 北京时间 16:00 = UTC 8:00
+
 jobs:
   set-matrix:
     runs-on: ubuntu-latest
@@ -72,6 +85,15 @@ jobs:
       BACKUP_PASSWORD: ${{ secrets.BACKUP_PASSWORD }}
       MYSQL_ROOT_PASSWORD: ${{ secrets.MYSQL_PASSWORD }}
       CONFIG_FILE: ${{ github.event.inputs.CONFIG_FILE }}
+      # ✅ 新增模式开关（这块就是可直接用的）
+      # ✅ 模式开关（定稿版）
+      MODE: ${{ github.event.inputs.MODE || 'latest' }}
+
+      ENABLE_HIT_CHECK: ${{ github.event.inputs.MODE == 'fulltest' && 'True' || 'False' }}
+      ENABLE_TRACK_OPEN_RANK: ${{ github.event.inputs.MODE == 'fulltest' && 'True' || 'False' }}
+      LOG_SAVE_MODE: ${{ github.event.inputs.MODE == 'fulltest' && 'True' || 'False' }}
+      QUERY_ISSUES: ${{ github.event.inputs.MODE == 'fulltest' && 'All' || 'None' }}
+      ALL_MODE_LIMIT: ${{ github.event.inputs.MODE == 'fulltest' && 'None' || '1' }}
     services:
       mysql:
         image: mysql:8.0
@@ -109,13 +131,13 @@ jobs:
           
           # Parse URL
           # DOWNLOAD_URL=$(echo $LATEST_JSON | jq -r '.assets[] | select(.name | endswith("_backup.zip")) | .browser_download_url')
-           DOWNLOAD_URL="https://github.com/suwei8/lotto_ai3_v2-Backup_data/releases/download/backup-3d-20250706/lotto_3d_20250706_backup.zip"
+           DOWNLOAD_URL="https://github.com/suwei8/lotto_ai3_v2-Backup_data/releases/download/test/lotto_ai3_v2-mini3d.zip"
                
                
-               echo "✅ Latest backup URL: $DOWNLOAD_URL"
+          echo "✅ Latest backup URL: $DOWNLOAD_URL"
           
           wget -O data/lotto_backup.zip "$DOWNLOAD_URL"
-          
+          sleep 1
           unzip -P "$BACKUP_PASSWORD" -o data/lotto_backup.zip -d data/
           ls -l data/
 
