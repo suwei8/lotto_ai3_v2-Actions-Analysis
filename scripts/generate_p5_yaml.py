@@ -1,5 +1,8 @@
 import sys
 import os
+import time
+import subprocess
+
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import yaml
@@ -11,7 +14,7 @@ from utils.logger import init_log_capture
 # ✅ 位置映射
 pos_map = {"万位": 0, "千位": 1, "百位": 2, "十位": 3, "个位": 4}
 
-# ✅ position 英文到中文映射
+# ✅ 英文参数映射
 POSITION_WORD_MAP = {
     'wanwei': '万位',
     'qianwei': '千位',
@@ -19,6 +22,9 @@ POSITION_WORD_MAP = {
     'shiwei': '十位',
     'gewei': '个位'
 }
+
+# === 最大运行时间（秒） ===
+MAX_RUNTIME = 5.8 * 60 * 60  # 5.8小时，安全比6小时限制短
 
 def get_position_idx(playtype_name):
     for pos in pos_map:
@@ -36,9 +42,9 @@ def get_hit_rank_list_from_stat(conn, playtype_name):
     df = pd.read_sql(sql, conn)
     max_hit = df['max_hit'].iloc[0] or 1
     if max_hit >= 5:
-        return [[1], [1,2], [1,2,3], [1,2,3,4]]
+        return [[1], [1, 2], [1, 2, 3], [1, 2, 3, 4]]
     elif max_hit >= 3:
-        return [[1], [1,2], [1,2,3]]
+        return [[1], [1, 2], [1, 2, 3]]
     else:
         return [[1]]
 
@@ -64,6 +70,11 @@ def is_better(new, old):
         return True
     return False
 
+def has_existing_yaml(playtype_name, pos):
+    base_dir = f"config/fixed/p5/{playtype_name}"
+    file_path = os.path.join(base_dir, f"sha_{pos}.yaml")
+    return os.path.exists(file_path)
+
 def save_yaml(playtype_name, pos, lookback, hit_rank_list, enable_sha):
     config = {
         "DINGWEI_SHA_POS": pos,
@@ -79,8 +90,16 @@ def save_yaml(playtype_name, pos, lookback, hit_rank_list, enable_sha):
     with open(file_path, "w", encoding="utf-8") as f:
         yaml.dump(config, f, allow_unicode=True)
     print(f"✅ 已生成: {file_path}")
+    return file_path
+
+def git_commit_push():
+    subprocess.run(["git", "add", "config/fixed/p5/"], check=False)
+    subprocess.run(["git", "commit", "-m", "🤖 自动增量保存 P5 YAML"], check=False)
+    subprocess.run(["git", "push"], check=False)
 
 def main():
+    start_time = time.time()
+
     # ✅ 解析 position 参数
     position_arg = None
     if len(sys.argv) > 1:
@@ -99,7 +118,6 @@ def main():
         return
 
     for playtype_name in playtype_names:
-        # ✅ 如果指定了 position，就只保留匹配的
         if position_arg and position_arg != 'all':
             expect_word = POSITION_WORD_MAP.get(position_arg)
             if expect_word not in playtype_name:
@@ -110,11 +128,21 @@ def main():
             print(f"⚠️ 未识别位置: {playtype_name}")
             continue
 
+        if has_existing_yaml(playtype_name, pos_idx):
+            print(f"⏭️ 已存在: {playtype_name} → sha_{pos_idx}.yaml，跳过")
+            continue
+
         hit_rank_list_options = get_hit_rank_list_from_stat(conn, playtype_name)
         ENABLE_DINGWEI_SHA_CANDIDATES = [[5], [8], [10], [12], [15]]
 
         for lookback in lookback_n_list:
             for hit_rank in hit_rank_list_options:
+                elapsed = time.time() - start_time
+                if elapsed >= MAX_RUNTIME:
+                    print("⏰ 已达到最大安全运行时，准备中断保存")
+                    git_commit_push()
+                    sys.exit(0)
+
                 best_result = None
                 best_enable_sha = None
                 for enable_sha in ENABLE_DINGWEI_SHA_CANDIDATES:
@@ -135,17 +163,18 @@ def main():
                         }
                     )
                     if result is not None:
-                        hit_count = result.get("命中率", 0)
-                        skip_count = result.get("跳过期数", 0)
-                        # 模拟：直接用 is_better 逻辑
-                        score_obj = {"命中率": hit_count, "跳过期数": skip_count}
+                        score_obj = {"命中率": result.get("命中率", 0), "跳过期数": result.get("跳过期数", 0)}
                         if is_better(score_obj, best_result):
                             best_result = score_obj
                             best_enable_sha = enable_sha
 
                 if best_result:
                     save_yaml(playtype_name, pos_idx, lookback, hit_rank, best_enable_sha)
+                    git_commit_push()  # 生成一个就立即 commit push
+
     conn.close()
+    git_commit_push()  # 最后收尾再提交一次
+    print("🎉 所有任务已完成，已全部保存。")
 
 if __name__ == "__main__":
     main()
