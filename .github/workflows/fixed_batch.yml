@@ -149,19 +149,30 @@ jobs:
         run: |
           mkdir -p data
           
-          # Get latest release info
+          # 获取 Release JSON
           LATEST_JSON=$(curl -s https://api.github.com/repos/suwei8/lotto_ai3_v2-Backup_data/releases/latest)
           
-          # Parse URL
-          # DOWNLOAD_URL="https://github.com/suwei8/lotto_ai3_v2-Backup_data/releases/download/test/lotto_ai3_v2-mini3d.zip"
-          DOWNLOAD_URL=$(echo $LATEST_JSON | jq -r '.assets[] | select(.name | endswith("_backup.zip")) | .browser_download_url')
-               
+          # 防止 JSON 为空导致 jq 报错
+          if [[ -z "$LATEST_JSON" || "$LATEST_JSON" == "null" ]]; then
+            echo "❌ GitHub API 获取失败，请检查仓库或网络"
+            exit 1
+          fi
+          
+          # 提取下载地址
+          DOWNLOAD_URL=$(echo "$LATEST_JSON" | jq -r '.assets[]? | select(.name | endswith("_backup.zip")) | .browser_download_url')
+          
+          if [[ -z "$DOWNLOAD_URL" || "$DOWNLOAD_URL" == "null" ]]; then
+            echo "❌ 未找到符合条件的 _backup.zip 文件"
+            exit 1
+          fi
+          
           echo "✅ Latest backup URL: $DOWNLOAD_URL"
           
           wget -O data/lotto_backup.zip "$DOWNLOAD_URL"
           sleep 1
           unzip -P "$BACKUP_PASSWORD" -o data/lotto_backup.zip -d data/
           ls -l data/
+    
 
       - name: Decompress SQL gzip
         run: |
