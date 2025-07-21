@@ -145,27 +145,16 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: Download latest database backup (auto)
+      - name: Download latest database backup (hardcoded)
         run: |
           mkdir -p data
           
-          # ✅ 正确地址：lotto_ai3_v2-Backup_data
-          echo "📦 正在请求 Release JSON..."
-          LATEST_JSON=$(curl -s https://api.github.com/repos/suwei8/lotto_ai3_v2-Backup_data/releases/latest)
+          # ✅ 直接使用硬编码链接，不再从 GitHub API 动态获取
+          DOWNLOAD_URL="https://github.com/suwei8/lotto_ai3_v2-Backup_data/releases/download/backup-20250721/lotto_20250721_backup.zip"
           
-          echo "📂 可用资源文件列表："
-          echo "$LATEST_JSON" | jq -r '.assets[]?.name'
-          
-          # ✅ 匹配文件名含 _backup.zip 的资源（防止找不到）
-          DOWNLOAD_URL=$(echo "$LATEST_JSON" | jq -r '.assets[]? | select(.name | test(".*_backup\\.zip$")) | .browser_download_url')
-          
-          if [[ -z "$DOWNLOAD_URL" || "$DOWNLOAD_URL" == "null" ]]; then
-            echo "❌ 未找到包含 _backup.zip 的 .zip 文件"
-            exit 1
-          fi
-          
-          echo "✅ 最新下载地址: $DOWNLOAD_URL"
+          echo "✅ 使用固定下载地址: $DOWNLOAD_URL"
           wget -O data/lotto_backup.zip "$DOWNLOAD_URL"
+          
           sleep 1
           unzip -P "$BACKUP_PASSWORD" -o data/lotto_backup.zip -d data/
           ls -l data/
