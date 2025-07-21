@@ -174,19 +174,41 @@ hours = elapsed // 3600
 minutes = (elapsed % 3600) // 60
 
 # === 定位位名称（对齐 utils 的映射思路） ===
-position_name_map = {}
-if LOTTERY in ["p5", "排列5", "排列五"]:
-    position_name_map = {0: "万位", 1: "千位", 2: "百位", 3: "十位", 4: "个位"}
-else:
-    position_name_map = {0: "百位", 1: "十位", 2: "个位"}
 
-pos_map = {
-    "baiwei": 0,
-    "shiwei": 1,
-    "gewei": 2
-}
-pos_idx = pos_map.get(POSITION, 0)  # 默认百位
+def get_position_maps(lottery: str):
+    if lottery.lower() in ["p5", "排列5", "排列五"]:
+        pos_map = {
+            "wanwei": 0,
+            "qianwei": 1,
+            "baiwei": 2,
+            "shiwei": 3,
+            "gewei": 4
+        }
+        position_name_map = {
+            0: "万位",
+            1: "千位",
+            2: "百位",
+            3: "十位",
+            4: "个位"
+        }
+    else:  # 默认支持3d / p3 / 福彩3D
+        pos_map = {
+            "baiwei": 0,
+            "shiwei": 1,
+            "gewei": 2
+        }
+        position_name_map = {
+            0: "百位",
+            1: "十位",
+            2: "个位"
+        }
+    return pos_map, position_name_map
+
+
+pos_map, position_name_map = get_position_maps(LOTTERY)
+pos_idx = pos_map.get(POSITION, 0)
 pos_name_cn = position_name_map.get(pos_idx, POSITION)
+
 LOTTERY_DISPLAY_NAME = {
     "3d": "福彩3D",
     "p3": "排列3",

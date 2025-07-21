@@ -1,0 +1,18 @@
+# config/fixed/3d/gewei/sha_1.yaml
+#  独立玩法推荐取值策略配置
+# === 定位杀号位置 ===
+DINGWEI_SHA_POS: 1
+
+QUERY_PLAYTYPE_NAME: 千位定1
+ANALYZE_PLAYTYPE_NAME: 千位定1
+
+# === 回溯期数 ===
+LOOKBACK_N: None
+
+# === 命中条件 ===
+HIT_RANK_LIST: [4]
+#  若开启此开关，则在专家筛选时仅保留“上一期命中过”的 user_id
+FILTER_LAST_HIT: true     #true
+
+# === 取值配置 ===
+ENABLE_DINGWEI_SHA: [1]
