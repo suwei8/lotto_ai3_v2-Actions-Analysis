@@ -1,45 +1,5 @@
 # utils/expert_hit_analysis.py
 
-"""
-expert_hit_analysis.py
-
-📌 模块功能简介：
-
-本模块用于分析专家推荐记录的命中表现，并基于统计结果生成杀号、胆码、定位杀号、定位定胆等推荐数字，
-适用于 Streamlit 页面与命令行脚本双模式环境，具备高度扩展性与灵活性，支持全自动批量分析与策略评估。
-
-🔧 核心功能包括：
-- analyze_expert_hits():
-    单期专家命中分析函数，支持两种专家筛选模式：
-    1）命中排名模式（mode="rank"）：按指定玩法在历史期号中统计命中次数，提取命中排名前N的专家；
-    2）命中次数模式（mode="hitcount"）：按多个玩法设置命中次数条件（如 "杀一" ≥ 2）筛选专家。
-    支持以下推荐策略：
-        - sha1/sha2：杀号（频次前/后数字）
-        - dan1/dan2：定胆（频次前/后数字）
-        - dingwei_sha1/2/3：定位杀号（指定位置频次统计）
-        - dingwei_dan1：定位定胆（指定位置）
-    支持指定推荐数字频次排名：[1,2,-1,"prev","prev+1","prev-2"]等复合表达式；
-    并提供 tie_mode（并列处理策略）和 skip_flag（推荐不足跳过）等细粒度控制。
-
-- run_hit_analysis_batch():
-    支持对多个期号批量执行推荐分析，输出每期推荐、命中结果与总结统计；
-    支持跳过策略、回溯不足期、prev定位提取、开奖号码排名追踪等增强能力；
-    可传入 log_callback 实现实时日志输出；支持 streamlit.stop 分析中止控制。
-
-- check_hit_on_result():
-    提供杀号/胆码/定位杀号/定位定胆等策略的实际命中判断；
-    自动对比开奖号执行命中验证，附带详细打印与音效提示（支持本地与浏览器播放）。
-
-- track_open_rank():
-    用于统计开奖号码在推荐数字排行榜中的排名位置，辅助评估推荐合理性。
-
-✅ 适用场景：
-- Streamlit 页面策略推荐与命中评估
-- 脚本定时任务策略效果验证与日志分析
-- 自动化测试与策略模型迭代优化
-"""
-
-
 
 import logging
 logging.getLogger("streamlit.runtime.scriptrunner_utils.script_run_context").setLevel(logging.ERROR)
@@ -57,7 +17,7 @@ import pandas as pd
 from utils.logger import log, save_log_file_if_needed
 import re
 from collections import Counter, defaultdict
-from utils.db import get_prediction_table, get_result_table
+from utils.db import get_prediction_table, get_result_table, get_hit_stat_table
 from utils.hit_rule import match_hit
 
 
@@ -128,6 +88,7 @@ def analyze_expert_hits(
         reverse_on_tie_dingwei_dan1: bool = False,
         specified_user_ids: list = None,  # ✅ 新增：直接指定 user_id
         min_gap_condition: tuple = None,
+        filter_last_hit=False,  # ✅ 新增参数
 
 ):
     prediction_table = get_prediction_table(lottery_name)
@@ -316,6 +277,27 @@ def analyze_expert_hits(
                     if isinstance(r, int) and abs(r) <= len(hit_values):
                         selected_hit_values.append(hit_values[r - 1] if r > 0 else hit_values[r])
                 eligible_user_ids = [uid for uid, hit in user_hit_dict.items() if hit in selected_hit_values]
+                # ✅ 如果启用了上期命中过筛选
+                if filter_last_hit and eligible_user_ids:
+                    prev_issue = str(int(query_issue) - 1)
+                    hit_stat_table = get_hit_stat_table(lottery_name)
+                    last_hit_df = pd.read_sql(
+                        f"""
+                        SELECT DISTINCT user_id
+                        FROM {hit_stat_table}
+                        WHERE issue_name = %s
+                          AND playtype_name = %s
+                          AND hit_count > 0
+                        """,
+                        conn,
+                        params=[prev_issue, query_playtype_name]
+                    )
+                    hit_user_ids_last = set(last_hit_df["user_id"].tolist())
+                    before_count = len(eligible_user_ids)
+                    eligible_user_ids = [uid for uid in eligible_user_ids if uid in hit_user_ids_last]
+                    after_count = len(eligible_user_ids)
+                    print(f"🎯 上期命中过筛选：从 {before_count} → {after_count}")
+
 
             print(f"🎯 最终解析出的命中值筛选列表: {selected_hit_values} （命中排名/命中值）")
             print(f"🎯 AI参与数量: {len(eligible_user_ids)}")
@@ -889,7 +871,6 @@ def run_hit_analysis_batch(
 
     if log_callback:
         log_callback()
-
 
 
 

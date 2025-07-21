@@ -222,3 +222,14 @@ def get_open_info(conn, result_table, issue_name, lottery_name=None):
         "render": render_open_result
     }
 
+
+def get_hit_stat_table(lottery_name: str) -> str:
+    mapping = {
+        "福彩3D": "expert_hit_stat_3d",
+        "排列3": "expert_hit_stat_p3",
+        "排列5": "expert_hit_stat_p5",
+        "快乐8": "expert_hit_stat_klb",
+        "双色球": "expert_hit_stat_ssq",
+        "大乐透": "expert_hit_stat_dlt",
+    }
+    return mapping.get(lottery_name, "expert_hit_stat_3d")

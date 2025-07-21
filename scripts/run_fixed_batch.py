@@ -85,6 +85,11 @@ for config in CONFIGS:
     env["STRATEGY_CONFIG_PATH"] = config
     env["LOTTERY"] = LOTTERY
     env["POSITION"] = POSITION
+    # ✅ 如果配置里有 FILTER_LAST_HIT: true，就设置进环境变量传下去
+    with open(config, encoding="utf-8") as f:
+        cfg_dict = yaml.safe_load(f)
+    if cfg_dict.get("FILTER_LAST_HIT", False):
+        env["FILTER_LAST_HIT"] = "true"
 
     print(env["STRATEGY_CONFIG_PATH"])
 
@@ -97,9 +102,16 @@ for config in CONFIGS:
         text=True,
         encoding="utf-8"
     )
-    out, _ = process.communicate()
 
-    print(out)  # ⏪ 输出
+    output_lines = []
+    for line in iter(process.stdout.readline, ''):
+        print(line.strip())  # ✅ 实时打印
+        output_lines.append(line.strip())
+
+    process.stdout.close()
+    process.wait()
+
+    out = "\n".join(output_lines)
     outputs.append(out)
 
 print("\n========== Final Summary ==========")
