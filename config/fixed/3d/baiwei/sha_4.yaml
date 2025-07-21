@@ -14,6 +14,6 @@ HIT_RANK_LIST: [1,2]
 
 # === 取值配置 ===
 ENABLE_DINGWEI_SHA: [6]
-
+FILTER_LAST_HIT: False     #true
 # ✅ 控制每个策略的“频次并列”行为
 RESOLVE_TIE_MODE_DINGWEI_SHA: Next

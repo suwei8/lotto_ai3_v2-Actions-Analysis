@@ -19,10 +19,11 @@ lottery_name = "福彩3D"  # ✅ 彩票类型（支持如 "福彩3D"、"排列3"
 query_issues = [None]  # ✅ 要分析的期号列表:[None] =最新一期,["All"]=所有期号，指定多期:"2025159", "2025158", "2025157"
 # query_issues = ["All"]
 all_mode_limit = None           # ✅ 2=限制 ["All"] 模式最多分析最近2期（默认 None 表示不限制）
-enable_hit_check = False
+
 check_mode = "dingwei"  # ✅ 可选值："dingwei"（配合"dingwei_sha_pos"参数仅判断指定定位位），"all"（判断百十个位全部）
 dingwei_sha_pos = 0  # ✅ 定位杀号位置（0=百位，1=十位，2=个位）
-enable_track_open_rank = False
+enable_track_open_rank = True
+enable_hit_check = True
 log_save_mode = False
 
 # ✅ 分析参数配置（将统一传入 analyze_expert_hits 函数）
