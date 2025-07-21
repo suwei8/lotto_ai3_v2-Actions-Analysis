@@ -145,29 +145,43 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: Download latest database backup (hardcoded)
+      - name: 📦 下载并还原数据库（含进度显示 + 耗时统计）
         run: |
+          echo "=============================="
+          echo "🎯 开始执行数据库恢复任务"
+          echo "⏱ 开始时间: $(date '+%Y-%m-%d %H:%M:%S')"
+          echo "=============================="
+          START_TIME=$(date +%s)
+
+          echo "📁 创建目录 & 下载 ZIP"
           mkdir -p data
-          
-          # ✅ 直接使用硬编码链接，不再从 GitHub API 动态获取
           DOWNLOAD_URL="https://github.com/suwei8/lotto_ai3_v2-Backup_data/releases/download/backup-20250721/lotto_20250721_backup.zip"
-          
-          echo "✅ 使用固定下载地址: $DOWNLOAD_URL"
           wget -O data/lotto_backup.zip "$DOWNLOAD_URL"
-          
-          sleep 1
+
+          echo "🔓 解压 ZIP 文件"
+          sudo apt-get update && sudo apt-get install -y unzip pv gzip
           unzip -P "$BACKUP_PASSWORD" -o data/lotto_backup.zip -d data/
-          ls -l data/
 
-      - name: Decompress SQL gzip
-        run: |
-          gunzip -f data/*.sql.gz
+          echo "🚀 开始恢复数据库（显示导入进度）"
+          SQL_GZ_FILE=$(find data -name '*.sql.gz' | head -n 1)
+          if [[ -z "$SQL_GZ_FILE" ]]; then
+            echo "❌ 未找到 SQL 压缩文件 (*.sql.gz)"
+            exit 1
+          fi
+          SQL_FILE_SIZE=$(gzip -l "$SQL_GZ_FILE" | awk 'NR==2 {print $2}')
+          gunzip -c "$SQL_GZ_FILE" | \
+            pv -s $SQL_FILE_SIZE | \
+            mysql -h$MYSQL_HOST -P$MYSQL_PORT -u$MYSQL_USER -p$MYSQL_PASSWORD $MYSQL_DATABASE
 
-      - name: Restore MySQL Database
+          echo "🧹 清理中间文件"
+          rm -rf data/*
 
-        run: |
-          chmod +x scripts/restore_db.sh
-          ./scripts/restore_db.sh
+          END_TIME=$(date +%s)
+          DURATION=$((END_TIME - START_TIME))
+          echo "=============================="
+          echo "✅ 恢复完成：耗时 ${DURATION} 秒（约 $((DURATION / 60)) 分钟）"
+          echo "⏱ 结束时间: $(date '+%Y-%m-%d %H:%M:%S')"
+          echo "=============================="
 
       - name: Set Python UTF-8 Encoding
         run: echo "PYTHONIOENCODING=utf-8" >> $GITHUB_ENV
