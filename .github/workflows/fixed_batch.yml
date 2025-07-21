@@ -149,19 +149,23 @@ jobs:
         run: |
           mkdir -p data
           
-          # Get latest release info
-          LATEST_JSON=$(curl -s https://api.github.com/repos/suwei8/lotto_ai3_v2-Backup_data/releases/latest)
+          # 获取最新 tag 的发布信息（更稳定）
+            LATEST_TAG=$(curl -s https://api.github.com/repos/suwei8/lotto_ai3_v2-Backup_data/releases | jq -r '.[0].tag_name')
+          echo "📌 最新 tag: $LATEST_TAG"
           
-          # Parse URL
-          # DOWNLOAD_URL="https://github.com/suwei8/lotto_ai3_v2-Backup_data/releases/download/test/lotto_ai3_v2-mini3d.zip"
-          DOWNLOAD_URL=$(echo $LATEST_JSON | jq -r '.assets[] | select(.name | endswith("_backup.zip")) | .browser_download_url')
-               
-          echo "✅ Latest backup URL: $DOWNLOAD_URL"
+          # 获取该 tag 的发布信息
+            LATEST_JSON=$(curl -s https://api.github.com/repos/suwei8/lotto_ai3_v2-Backup_data/releases/tags/$LATEST_TAG)
+            
+            # 提取下载链接
+            DOWNLOAD_URL=$(echo $LATEST_JSON | jq -r '.assets[] | select(.name | endswith("_backup.zip")) | .browser_download_url')
+          echo "✅ Backup URL: $DOWNLOAD_URL"
           
-          wget -O data/lotto_backup.zip "$DOWNLOAD_URL"
-          sleep 1
-          unzip -P "$BACKUP_PASSWORD" -o data/lotto_backup.zip -d data/
-          ls -l data/
+          # 下载 & 解压
+            mkdir -p data
+            wget -O data/lotto_backup.zip "$DOWNLOAD_URL"
+            sleep 1
+            unzip -P "$BACKUP_PASSWORD" -o data/lotto_backup.zip -d data/
+            ls -lh data/
 
       - name: Decompress SQL gzip
         run: |
