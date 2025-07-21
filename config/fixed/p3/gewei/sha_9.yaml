@@ -3,15 +3,14 @@
 # === 定位杀号位置 ===
 DINGWEI_SHA_POS: 2
 
-QUERY_PLAYTYPE_NAME: 百位定1
-ANALYZE_PLAYTYPE_NAME: 百位定1
+QUERY_PLAYTYPE_NAME: 个位定1
+ANALYZE_PLAYTYPE_NAME: 个位定1
 
 # === 回溯期数 ===
-LOOKBACK_N: None
+#LOOKBACK_N: None
 
 # === 命中条件 ===
-HIT_RANK_LIST: [5]
-#  若开启此开关，则在专家筛选时仅保留“上一期命中过”的 user_id
+HIT_RANK_LIST: [-1,-2,-3]
 FILTER_LAST_HIT: true     #true
 
 # === 取值配置 ===

@@ -272,10 +272,15 @@ def analyze_expert_hits(
                         user_hit_dict[uid] = 0
                 hit_values = sorted(set(user_hit_dict.values()), reverse=True)
 
-                selected_hit_values = []
-                for r in hit_rank_list:
-                    if isinstance(r, int) and abs(r) <= len(hit_values):
-                        selected_hit_values.append(hit_values[r - 1] if r > 0 else hit_values[r])
+                # ✅ 支持 HIT_RANK_LIST=["ALL"] 模式：表示全部真实命中次数
+                if hit_rank_list == ["ALL"]:
+                    selected_hit_values = hit_values  # 直接用所有真实命中次数
+                    print(f"🎯 命中排名列表为 ['ALL']，自动展开为真实命中次数: {selected_hit_values}")
+                else:
+                    selected_hit_values = []
+                    for r in hit_rank_list:
+                        if isinstance(r, int) and abs(r) <= len(hit_values):
+                            selected_hit_values.append(hit_values[r - 1] if r > 0 else hit_values[r])
                 eligible_user_ids = [uid for uid, hit in user_hit_dict.items() if hit in selected_hit_values]
                 # ✅ 如果启用了上期命中过筛选
                 if filter_last_hit and eligible_user_ids:

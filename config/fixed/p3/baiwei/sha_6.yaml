@@ -10,7 +10,7 @@ ANALYZE_PLAYTYPE_NAME: 百位定1
 #LOOKBACK_N: None
 
 # === 命中条件 ===
-HIT_RANK_LIST: [1]
+HIT_RANK_LIST: [6]
 FILTER_LAST_HIT: False     #true
 
 # === 取值配置 ===
