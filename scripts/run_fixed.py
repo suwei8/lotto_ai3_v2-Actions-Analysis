@@ -29,7 +29,6 @@ base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 strategy_path = os.getenv("STRATEGY_CONFIG_PATH")
 
 # === 多彩种 base.yaml 自动路径 ===
-# === 多彩种 base.yaml 自动路径 ===
 if strategy_path and os.path.exists(strategy_path):
     with open(strategy_path, encoding="utf-8") as f:
         STRATEGY = yaml.safe_load(f)
@@ -231,6 +230,8 @@ reverse_on_tie_dingwei_sha = (os.getenv("REVERSE_ON_TIE_DINGWEI_SHA") or str(CON
 reverse_on_tie_dingwei_sha2 = (os.getenv("REVERSE_ON_TIE_DINGWEI_SHA2") or str(CONFIG.get("REVERSE_ON_TIE_DINGWEI_SHA2", "False"))).lower() == "true"
 reverse_on_tie_dingwei_sha3 = (os.getenv("REVERSE_ON_TIE_DINGWEI_SHA3") or str(CONFIG.get("REVERSE_ON_TIE_DINGWEI_SHA3", "False"))).lower() == "true"
 reverse_on_tie_dingwei_dan1 = (os.getenv("REVERSE_ON_TIE_DINGWEI_DAN1") or str(CONFIG.get("REVERSE_ON_TIE_DINGWEI_DAN1", "False"))).lower() == "true"
+filter_last_hit = os.getenv("FILTER_LAST_HIT", "").lower() == "true"
+
 
 analysis_kwargs = dict(
     query_playtype_name=query_playtype_name,
@@ -267,6 +268,7 @@ analysis_kwargs = dict(
     reverse_on_tie_dingwei_sha2=reverse_on_tie_dingwei_sha2,
     reverse_on_tie_dingwei_sha3=reverse_on_tie_dingwei_sha3,
     reverse_on_tie_dingwei_dan1=reverse_on_tie_dingwei_dan1,
+    filter_last_hit=filter_last_hit,
 )
 # ✅ 核心调试点：把最终所有分析参数都打印出来
 # for k, v in analysis_kwargs.items():
@@ -308,6 +310,7 @@ if not log_files:
 
 latest_log = max(log_files, key=os.path.getmtime)
 print(f"✅ 找到最新日志文件: {latest_log}")
+print(f"🧪 是否启用上期命中过筛选: {filter_last_hit}")
 
 with open(latest_log, "r", encoding="utf-8") as f:
     log_text = f.read()
