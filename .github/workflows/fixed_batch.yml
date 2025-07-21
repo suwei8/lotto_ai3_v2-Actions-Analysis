@@ -149,20 +149,15 @@ jobs:
         run: |
           mkdir -p data
           
-          # 获取 Release JSON
+          # 拉取 JSON
           LATEST_JSON=$(curl -s https://api.github.com/repos/suwei8/lotto_ai3_v2-Backup_data/releases/latest)
           
-          # 防止 JSON 为空导致 jq 报错
-          if [[ -z "$LATEST_JSON" || "$LATEST_JSON" == "null" ]]; then
-            echo "❌ GitHub API 获取失败，请检查仓库或网络"
-            exit 1
-          fi
-          
-          # 提取下载地址
-          DOWNLOAD_URL=$(echo "$LATEST_JSON" | jq -r '.assets[]? | select(.name | endswith("_backup.zip")) | .browser_download_url')
+          # 提取下载链接（支持包含 backup 的任意 zip 文件）
+          DOWNLOAD_URL=$(echo "$LATEST_JSON" | jq -r '.assets[]? | select(.name | test("backup.*\\.zip$")) | .browser_download_url')
           
           if [[ -z "$DOWNLOAD_URL" || "$DOWNLOAD_URL" == "null" ]]; then
-            echo "❌ 未找到符合条件的 _backup.zip 文件"
+            echo "❌ 未找到包含 backup 的 .zip 文件"
+            echo "$LATEST_JSON" | jq -r '.assets[]?.name'
             exit 1
           fi
           
