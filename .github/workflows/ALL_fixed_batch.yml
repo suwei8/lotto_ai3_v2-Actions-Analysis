@@ -1,0 +1,101 @@
+name: 每天福彩3D-排列3-排列5全量分析
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 7 * * *"  # 每天 UTC 07:00 ➜ 北京时间 15:00
+
+jobs:
+  run-full-analysis:
+    runs-on: ubuntu-latest
+    env:
+      PYTHONIOENCODING: "utf-8"
+      MYSQL_HOST: 127.0.0.1
+      MYSQL_PORT: 3306
+      MYSQL_USER: root
+      MYSQL_PASSWORD: ${{ secrets.MYSQL_PASSWORD }}
+      MYSQL_DATABASE: ${{ secrets.MYSQL_DATABASE }}
+      WECHAT_API_URL: ${{ secrets.WECHAT_API_URL }}
+      WECHAT_API_KEY: ${{ secrets.WECHAT_API_KEY }}
+      BACKUP_PASSWORD: ${{ secrets.BACKUP_PASSWORD }}
+      MYSQL_ROOT_PASSWORD: ${{ secrets.MYSQL_PASSWORD }}
+      MODE: latest
+      ENABLE_HIT_CHECK: False
+      ENABLE_TRACK_OPEN_RANK: False
+      LOG_SAVE_MODE: False
+      ALL_MODE_LIMIT: 1
+      QUERY_ISSUES: None
+
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: ${{ secrets.MYSQL_PASSWORD }}
+          MYSQL_DATABASE: ${{ secrets.MYSQL_DATABASE }}
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 --silent"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Debug Timezone Info
+        run: |
+          echo "==== 🕒 当前时间检查 ===="
+          echo "✅ 当前 UTC 时间: $(date -u '+%Y-%m-%d %H:%M:%S')"
+          echo "✅ 当前 北京时间: $(TZ='Asia/Shanghai' date '+%Y-%m-%d %H:%M:%S')"
+          echo "========================"
+
+      - name: 📦 动态获取最新数据库备份并还原（含进度显示）
+        run: |
+          echo "📁 创建目录"
+          mkdir -p data
+          echo "🌐 拉取 latest release"
+          LATEST_JSON=$(curl -s https://api.github.com/repos/suwei8/lotto_ai3_v2-Backup_data/releases/latest)
+          DOWNLOAD_URL=$(echo "$LATEST_JSON" | jq -r '.assets[] | select(.name | endswith("_backup.zip")) | .browser_download_url')
+
+          if [[ -z "$DOWNLOAD_URL" ]]; then
+            echo "❌ 未找到符合条件的备份 zip 文件"
+            exit 1
+          fi
+
+          echo "✅ 下载链接: $DOWNLOAD_URL"
+          wget -O data/lotto_backup.zip "$DOWNLOAD_URL"
+          sudo apt-get update && sudo apt-get install -y unzip pv gzip
+          unzip -P "$BACKUP_PASSWORD" -o data/lotto_backup.zip -d data/
+
+          echo "🚀 开始恢复数据库..."
+          SQL_GZ_FILE=$(find data -name '*.sql.gz' | head -n 1)
+          SQL_FILE_SIZE=$(gzip -l "$SQL_GZ_FILE" | awk 'NR==2 {print $2}')
+          gunzip -c "$SQL_GZ_FILE" | pv -s $SQL_FILE_SIZE | mysql -h$MYSQL_HOST -P$MYSQL_PORT -u$MYSQL_USER -p$MYSQL_PASSWORD $MYSQL_DATABASE
+          rm -rf data/
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install requirements
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: 陆续执行所有彩种所有分位分析
+        run: |
+          declare -A positions
+          positions["3d"]="baiwei shiwei gewei"
+          positions["p3"]="baiwei shiwei gewei"
+          positions["p5"]="wanwei qianwei baiwei shiwei gewei"
+
+          for LOTTERY in 3d p3 p5; do
+            echo "🚀 开始执行 $LOTTERY 分析"
+            for POSITION in ${positions[$LOTTERY]}; do
+              echo "🎯 执行：python scripts/run_fixed_batch.py --lottery $LOTTERY --position $POSITION"
+              python scripts/run_fixed_batch.py --lottery $LOTTERY --position $POSITION || echo "⚠️ $LOTTERY-$POSITION 执行失败，继续下一个"
+            done
+          done
