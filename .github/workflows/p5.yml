@@ -170,11 +170,9 @@ jobs:
           mkdir -p data
           
           # Get latest release info
-          LATEST_JSON=$(curl -s https://api.github.com/repos/suwei8/lotto_ai3_v2-Backup_data/releases/latest)
-          
-          # Parse URL
-          DOWNLOAD_URL=$(echo $LATEST_JSON | jq -r '.assets[] | select(.name | endswith("_backup.zip")) | .browser_download_url')
-          
+          # LATEST_JSON=$(curl -s https://api.github.com/repos/suwei8/lotto_ai3_v2-Backup_data/releases/latest)
+           DOWNLOAD_URL=https://github.com/suwei8/lotto_ai3_v2-Backup_data/releases/download/backup-3d-20250708/lotto_p5_20250708_backup.zip
+
           echo "✅ Latest backup URL: $DOWNLOAD_URL"
           
           wget -O data/lotto_backup.zip "$DOWNLOAD_URL"
@@ -230,7 +228,7 @@ jobs:
 
 
         # run: python scripts/run_p5.py
-        run: python scripts/run_p5.py > /dev/null 2>&1
+        run: python scripts/run_p5.py
 
       - name: Organize log into p5 folder
         run: |
