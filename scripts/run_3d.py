@@ -1,3 +1,4 @@
+# scripts/run_3d.py
 import os
 import sys
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -108,7 +109,13 @@ else:
 
 enable_dingwei_sha2 = os.getenv("ENABLE_DINGWEI_SHA2", "False").lower() == "true"
 enable_dingwei_sha3 = os.getenv("ENABLE_DINGWEI_SHA3", "False").lower() == "true"
-enable_dingwei_dan1 = os.getenv("ENABLE_DINGWEI_DAN1", "False").lower() == "true"
+# ✅ 更智能的解析，支持 "[1]" / "True" / "False" 等
+enable_dingwei_dan1_raw = os.getenv("ENABLE_DINGWEI_DAN1", "False")
+try:
+    enable_dingwei_dan1 = json.loads(enable_dingwei_dan1_raw)
+except Exception:
+    enable_dingwei_dan1 = enable_dingwei_dan1_raw.lower() == "true"
+
 
 skip_if_few_sha1 = os.getenv("SKIP_IF_FEW_SHA1", "False").lower() == "true"
 skip_if_few_sha2 = os.getenv("SKIP_IF_FEW_SHA2", "False").lower() == "true"
@@ -232,6 +239,7 @@ if back_playtype: msg.append(f"✅ 回溯玩法: {back_playtype.group(1)}")
 if analyze_playtype: msg.append(f"✅ 分析玩法: {analyze_playtype.group(1)}")
 
 msg.append(f"启用定位杀号位置: {analysis_kwargs.get('enable_dingwei_sha', '未启用')}")
+msg.append(f"启用定位定胆: {analysis_kwargs.get('enable_dingwei_dan1')}")
 msg.append(f"遇到频次并列时: {analysis_kwargs.get('resolve_tie_mode_dingwei_sha', '未设置')}")
 msg.append(f"跳过推荐不足: {'启用' if analysis_kwargs.get('skip_if_few_dingwei_sha') else '未启用'}")
 msg.append("=============")
