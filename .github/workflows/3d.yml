@@ -210,9 +210,6 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: Set Python UTF-8 Encoding
-        run: echo "PYTHONIOENCODING=utf-8" >> $GITHUB_ENV
-
       - name: Run Analysis Batch
         env:
           # === Actions 参数 ===
