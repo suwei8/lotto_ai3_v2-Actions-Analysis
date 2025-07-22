@@ -122,7 +122,6 @@ on:
         default: "False"
 
 
-
 jobs:
   analyze:
     runs-on: ubuntu-latest
@@ -139,10 +138,54 @@ jobs:
           --health-interval=10s
           --health-timeout=5s
           --health-retries=5
-
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: 📦 固定最新数据库备份并还原（含进度显示）
+        run: |
+          echo "=============================="
+          echo "🎯 开始执行最新数据库恢复任务"
+          echo "⏱ 开始时间: $(date '+%Y-%m-%d %H:%M:%S')"
+          echo "=============================="
+          START_TIME=$(date +%s)
+          
+          echo "📁 创建目录"
+          mkdir -p data
+          
+          DOWNLOAD_URL="https://github.com/suwei8/LottoAI3_HitMatrix_date/releases/download/backup-p5/lotto_p5_backup.zip"
+          
+          echo "✅ 最新下载链接: $DOWNLOAD_URL"
+          wget -O data/lotto_backup.zip "$DOWNLOAD_URL"
+          
+          echo "🔓 解压 ZIP 文件"
+          sudo apt-get update && sudo apt-get install -y unzip pv gzip
+          unzip -P "$BACKUP_PASSWORD" -o data/lotto_backup.zip -d data/
+          
+          echo "🚀 恢复数据库（显示导入进度）"
+          SQL_GZ_FILE=$(find data -name '*.sql.gz' | head -n 1)
+          if [[ -z "$SQL_GZ_FILE" ]]; then
+            echo "❌ 未找到 SQL 压缩文件 (*.sql.gz)"
+            exit 1
+          fi
+          
+          SQL_FILE_SIZE=$(gzip -l "$SQL_GZ_FILE" | awk 'NR==2 {print $2}')
+          
+          # ✅ 设置密码，避免警告
+          export MYSQL_PWD="$MYSQL_PASSWORD"
+          
+          # ✅ 强制输出 pv 进度（即使在 GitHub Actions 非交互环境下）
+          gunzip -c "$SQL_GZ_FILE" | pv -f -s $SQL_FILE_SIZE | mysql -h$MYSQL_HOST -P$MYSQL_PORT -u$MYSQL_USER $MYSQL_DATABASE
+          
+          echo "🧹 清理中间文件"
+          rm -rf data/*
+          
+          END_TIME=$(date +%s)
+          DURATION=$((END_TIME - START_TIME))
+          echo "=============================="
+          echo "✅ 恢复完成：耗时 ${DURATION} 秒（约 $((DURATION / 60)) 分钟）"
+          echo "⏱ 结束时间: $(date '+%Y-%m-%d %H:%M:%S')"
+          echo "=============================="
 
       - name: Setup Python
         uses: actions/setup-python@v5
@@ -154,62 +197,8 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-#      - name: Download database backup
-#        env:
-#          BACKUP_PASSWORD: ${{ secrets.BACKUP_PASSWORD }}
-#        run: |
-#          mkdir -p data
-#          wget -O data/lotto_backup.zip "https://github.com/suwei8/lotto_ai3_v2-Backup_data/releases/download/backup-20250703/lotto_20250703_backup.zip"
-#          unzip -P "$BACKUP_PASSWORD" -o data/lotto_backup.zip -d data/
-#          ls -l data/
-
-      - name: Download latest database backup (auto)
-        env:
-          BACKUP_PASSWORD: ${{ secrets.BACKUP_PASSWORD }}
-        run: |
-          mkdir -p data
-          
-          # Get latest release info
-          # LATEST_JSON=$(curl -s https://api.github.com/repos/suwei8/lotto_ai3_v2-Backup_data/releases/latest)
-           DOWNLOAD_URL=https://github.com/suwei8/lotto_ai3_v2-Backup_data/releases/download/backup-3d-20250708/lotto_p5_20250708_backup.zip
-
-          echo "✅ Latest backup URL: $DOWNLOAD_URL"
-          
-          wget -O data/lotto_backup.zip "$DOWNLOAD_URL"
-          
-          unzip -P "$BACKUP_PASSWORD" -o data/lotto_backup.zip -d data/
-          ls -l data/
-            
-
-      - name: Decompress SQL gzip
-        run: |
-          gunzip -f data/*.sql.gz
-
-      - name: Restore MySQL Database
-        env:
-          PYTHONIOENCODING: "utf-8"
-          MYSQL_HOST: 127.0.0.1
-          MYSQL_PORT: 3306
-          MYSQL_USER: root
-          MYSQL_PASSWORD: ${{ secrets.MYSQL_PASSWORD }}
-          MYSQL_DATABASE: ${{ secrets.MYSQL_DATABASE }}
-
-        run: |
-          chmod +x scripts/restore_db.sh
-          ./scripts/restore_db.sh
-
-      - name: Set Python UTF-8 Encoding
-        run: echo "PYTHONIOENCODING=utf-8" >> $GITHUB_ENV
-
       - name: Run Analysis Batch
         env:
-          PYTHONIOENCODING: "utf-8"
-          MYSQL_HOST: 127.0.0.1
-          MYSQL_PORT: 3306
-          MYSQL_USER: root
-          MYSQL_PASSWORD: ${{ secrets.MYSQL_PASSWORD }}
-          MYSQL_DATABASE: ${{ secrets.MYSQL_DATABASE }}
-
           # === Actions 参数 ===
           CHECK_MODE: ${{ github.event.inputs.CHECK_MODE }}
           DINGWEI_SHA_POS: ${{ github.event.inputs.DINGWEI_SHA_POS }}
@@ -221,16 +210,11 @@ jobs:
           ENABLE_DAN1: ${{ github.event.inputs.ENABLE_DAN1 }}
           ENABLE_DINGWEI_SHA: ${{ github.event.inputs.ENABLE_DINGWEI_SHA }}
           ENABLE_DINGWEI_DAN1: ${{ github.event.inputs.ENABLE_DINGWEI_DAN1 }}
-          # === 固定默认参数（不暴露给界面） ===
-          WECHAT_API_URL: ${{ secrets.WECHAT_API_URL }}
-          WECHAT_API_KEY: ${{ secrets.WECHAT_API_KEY }}
-          GITHUB_RUN_NUMBER: ${{ github.run_number }}
 
-
-        # run: python scripts/run_p5.py
         run: python scripts/run_p5.py
+        # run: python scripts/run_p5.py > /dev/null 2>&1
 
-      - name: Organize log into p5 folder
+      - name: Organize log into folder
         run: |
           mkdir -p log/p5
           mv log/run_p5_*.log log/p5/
