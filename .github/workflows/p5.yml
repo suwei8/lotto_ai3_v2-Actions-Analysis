@@ -120,7 +120,18 @@ on:
           False=不启用
         required: false
         default: "False"
-
+env:
+  PYTHONIOENCODING: "utf-8"
+  MYSQL_HOST: 127.0.0.1
+  MYSQL_PORT: 3306
+  MYSQL_USER: root
+  MYSQL_PASSWORD: ${{ secrets.MYSQL_PASSWORD }}
+  MYSQL_DATABASE: ${{ secrets.MYSQL_DATABASE }}
+  WECHAT_API_URL: ${{ secrets.WECHAT_API_URL }}
+  WECHAT_API_KEY: ${{ secrets.WECHAT_API_KEY }}
+  GITHUB_RUN_NUMBER: ${{ github.run_number }}
+  BACKUP_PASSWORD: ${{ secrets.BACKUP_PASSWORD }}
+  MYSQL_ROOT_PASSWORD: ${{ secrets.MYSQL_PASSWORD }}
 
 jobs:
   analyze:
