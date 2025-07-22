@@ -118,7 +118,18 @@ on:
         required: false
         default: "False"
 
-
+env:
+  PYTHONIOENCODING: "utf-8"
+  MYSQL_HOST: 127.0.0.1
+  MYSQL_PORT: 3306
+  MYSQL_USER: root
+  MYSQL_PASSWORD: ${{ secrets.MYSQL_PASSWORD }}
+  MYSQL_DATABASE: ${{ secrets.MYSQL_DATABASE }}
+  WECHAT_API_URL: ${{ secrets.WECHAT_API_URL }}
+  WECHAT_API_KEY: ${{ secrets.WECHAT_API_KEY }}
+  GITHUB_RUN_NUMBER: ${{ github.run_number }}
+  BACKUP_PASSWORD: ${{ secrets.BACKUP_PASSWORD }}
+  MYSQL_ROOT_PASSWORD: ${{ secrets.MYSQL_PASSWORD }}
 
 jobs:
   analyze:
@@ -136,11 +147,9 @@ jobs:
           --health-interval=10s
           --health-timeout=5s
           --health-retries=5
-
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
 
       - name: 📦 动态获取最新数据库备份并还原（含进度显示）
         run: |
@@ -201,30 +210,11 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-
-
       - name: Set Python UTF-8 Encoding
         run: echo "PYTHONIOENCODING=utf-8" >> $GITHUB_ENV
-      - name: Setup Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
-
-      - name: Install requirements
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
-
 
       - name: Run Analysis Batch
         env:
-          PYTHONIOENCODING: "utf-8"
-          MYSQL_HOST: 127.0.0.1
-          MYSQL_PORT: 3306
-          MYSQL_USER: root
-          MYSQL_PASSWORD: ${{ secrets.MYSQL_PASSWORD }}
-          MYSQL_DATABASE: ${{ secrets.MYSQL_DATABASE }}
-
           # === Actions 参数 ===
           CHECK_MODE: ${{ github.event.inputs.CHECK_MODE }}
           DINGWEI_SHA_POS: ${{ github.event.inputs.DINGWEI_SHA_POS }}
@@ -236,11 +226,6 @@ jobs:
           ENABLE_DAN1: ${{ github.event.inputs.ENABLE_DAN1 }}
           ENABLE_DINGWEI_SHA: ${{ github.event.inputs.ENABLE_DINGWEI_SHA }}
           ENABLE_DINGWEI_DAN1: ${{ github.event.inputs.ENABLE_DINGWEI_DAN1 }}
-          # === 固定默认参数（不暴露给界面） ===
-          WECHAT_API_URL: ${{ secrets.WECHAT_API_URL }}
-          WECHAT_API_KEY: ${{ secrets.WECHAT_API_KEY }}
-          GITHUB_RUN_NUMBER: ${{ github.run_number }}
-
 
         run: python scripts/run_3d.py
         # run: python scripts/run_3d.py > /dev/null 2>&1
