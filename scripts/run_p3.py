@@ -1,3 +1,4 @@
+# scripts/run_p3.py
 import os
 import sys
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -32,6 +33,7 @@ with open(yaml_path, encoding="utf-8") as f:
 check_mode = os.getenv("CHECK_MODE") or "dingwei"
 lottery_name = os.getenv("LOTTERY_NAME") or CONFIG["LOTTERY_NAME"]
 analysis_mode = os.getenv("ANALYSIS_MODE") or CONFIG["ANALYSIS_MODE"]
+QUERY_ISSUES = os.getenv("QUERY_ISSUES") or CONFIG["QUERY_ISSUES"]
 # 先强制 config 默认值变成 NoneType
 _config_limit = CONFIG.get("ALL_MODE_LIMIT", None)
 if _config_limit in ("None", ""):
@@ -42,7 +44,7 @@ enable_hit_check = str(os.getenv("ENABLE_HIT_CHECK") or CONFIG["ENABLE_HIT_CHECK
 
 print(f"✅ CHECK_MODE: {check_mode}")
 print(f"✅ LOTTERY_NAME: {lottery_name}")
-
+print(f"✅ QUERY_ISSUES: {QUERY_ISSUES}")
 # === 初始化 ===
 
 if "__print_original__" not in builtins.__dict__:
@@ -107,7 +109,13 @@ else:
 
 enable_dingwei_sha2 = os.getenv("ENABLE_DINGWEI_SHA2", "False").lower() == "true"
 enable_dingwei_sha3 = os.getenv("ENABLE_DINGWEI_SHA3", "False").lower() == "true"
-enable_dingwei_dan1 = os.getenv("ENABLE_DINGWEI_DAN1", "False").lower() == "true"
+# ✅ 更智能的解析，支持 "[1]" / "True" / "False" 等
+enable_dingwei_dan1_raw = os.getenv("ENABLE_DINGWEI_DAN1", "False")
+try:
+    enable_dingwei_dan1 = json.loads(enable_dingwei_dan1_raw)
+except Exception:
+    enable_dingwei_dan1 = enable_dingwei_dan1_raw.lower() == "true"
+
 
 skip_if_few_sha1 = os.getenv("SKIP_IF_FEW_SHA1", "False").lower() == "true"
 skip_if_few_sha2 = os.getenv("SKIP_IF_FEW_SHA2", "False").lower() == "true"
@@ -182,8 +190,8 @@ run_hit_analysis_batch(
     analysis_kwargs=analysis_kwargs
 )
 
+save_log_file_if_needed(log_save_mode)
 
-save_log_file_if_needed(log_save_mode, script_name_hint=os.path.basename(__file__))
 import time; time.sleep(1)
 
 import re
@@ -231,6 +239,7 @@ if back_playtype: msg.append(f"✅ 回溯玩法: {back_playtype.group(1)}")
 if analyze_playtype: msg.append(f"✅ 分析玩法: {analyze_playtype.group(1)}")
 
 msg.append(f"启用定位杀号位置: {analysis_kwargs.get('enable_dingwei_sha', '未启用')}")
+msg.append(f"启用定位定胆: {analysis_kwargs.get('enable_dingwei_dan1')}")
 msg.append(f"遇到频次并列时: {analysis_kwargs.get('resolve_tie_mode_dingwei_sha', '未设置')}")
 msg.append(f"跳过推荐不足: {'启用' if analysis_kwargs.get('skip_if_few_dingwei_sha') else '未启用'}")
 msg.append("=============")
