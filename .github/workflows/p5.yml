@@ -221,6 +221,9 @@ jobs:
           ENABLE_DAN1: ${{ github.event.inputs.ENABLE_DAN1 }}
           ENABLE_DINGWEI_SHA: ${{ github.event.inputs.ENABLE_DINGWEI_SHA }}
           ENABLE_DINGWEI_DAN1: ${{ github.event.inputs.ENABLE_DINGWEI_DAN1 }}
+          ENABLE_HIT_CHECK: True
+          ENABLE_TRACK_OPEN_RANK: True
+          LOG_SAVE_MODE: True
 
         run: python scripts/run_p5.py
         # run: python scripts/run_p5.py > /dev/null 2>&1
