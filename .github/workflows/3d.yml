@@ -158,41 +158,46 @@ jobs:
           echo "⏱ 开始时间: $(date '+%Y-%m-%d %H:%M:%S')"
           echo "=============================="
           START_TIME=$(date +%s)
-
+          
           echo "📁 创建目录"
           mkdir -p data
-
+          
           echo "🌐 通过 GitHub API 获取 latest release 信息"
           LATEST_JSON=$(curl -s https://api.github.com/repos/suwei8/lotto_ai3_v2-Backup_data/releases/latest)
-
+          
           echo "🔍 解析下载链接"
           DOWNLOAD_URL=$(echo "$LATEST_JSON" | jq -r '.assets[] | select(.name | endswith("_backup.zip")) | .browser_download_url')
-
+          
           if [[ -z "$DOWNLOAD_URL" ]]; then
             echo "❌ 未找到符合条件的备份 zip 文件"
             exit 1
           fi
-
+          
           echo "✅ 最新下载链接: $DOWNLOAD_URL"
           wget -O data/lotto_backup.zip "$DOWNLOAD_URL"
-
+          
           echo "🔓 解压 ZIP 文件"
           sudo apt-get update && sudo apt-get install -y unzip pv gzip
           unzip -P "$BACKUP_PASSWORD" -o data/lotto_backup.zip -d data/
-
+          
           echo "🚀 恢复数据库（显示导入进度）"
           SQL_GZ_FILE=$(find data -name '*.sql.gz' | head -n 1)
           if [[ -z "$SQL_GZ_FILE" ]]; then
             echo "❌ 未找到 SQL 压缩文件 (*.sql.gz)"
             exit 1
           fi
-
+          
           SQL_FILE_SIZE=$(gzip -l "$SQL_GZ_FILE" | awk 'NR==2 {print $2}')
-          gunzip -c "$SQL_GZ_FILE" | pv -s $SQL_FILE_SIZE | mysql -h$MYSQL_HOST -P$MYSQL_PORT -u$MYSQL_USER -p$MYSQL_PASSWORD $MYSQL_DATABASE
-
+          
+          # ✅ 设置密码，避免警告
+          export MYSQL_PWD="$MYSQL_PASSWORD"
+          
+          # ✅ 强制输出 pv 进度（即使在 GitHub Actions 非交互环境下）
+          gunzip -c "$SQL_GZ_FILE" | pv -f -s $SQL_FILE_SIZE | mysql -h$MYSQL_HOST -P$MYSQL_PORT -u$MYSQL_USER $MYSQL_DATABASE
+          
           echo "🧹 清理中间文件"
           rm -rf data/*
-
+          
           END_TIME=$(date +%s)
           DURATION=$((END_TIME - START_TIME))
           echo "=============================="
@@ -227,7 +232,7 @@ jobs:
         run: python scripts/run_3d.py
         # run: python scripts/run_3d.py > /dev/null 2>&1
 
-      - name: Organize log into p5 folder
+      - name: Organize log into folder
         run: |
           mkdir -p log/3d
           mv log/run_3d_*.log log/3d/
