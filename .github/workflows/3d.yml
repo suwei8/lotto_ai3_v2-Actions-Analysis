@@ -141,6 +141,56 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+
+      - name: 📦 动态获取最新数据库备份并还原（含进度显示）
+        run: |
+          echo "=============================="
+          echo "🎯 开始执行最新数据库恢复任务"
+          echo "⏱ 开始时间: $(date '+%Y-%m-%d %H:%M:%S')"
+          echo "=============================="
+          START_TIME=$(date +%s)
+
+          echo "📁 创建目录"
+          mkdir -p data
+
+          echo "🌐 通过 GitHub API 获取 latest release 信息"
+          LATEST_JSON=$(curl -s https://api.github.com/repos/suwei8/lotto_ai3_v2-Backup_data/releases/latest)
+
+          echo "🔍 解析下载链接"
+          DOWNLOAD_URL=$(echo "$LATEST_JSON" | jq -r '.assets[] | select(.name | endswith("_backup.zip")) | .browser_download_url')
+
+          if [[ -z "$DOWNLOAD_URL" ]]; then
+            echo "❌ 未找到符合条件的备份 zip 文件"
+            exit 1
+          fi
+
+          echo "✅ 最新下载链接: $DOWNLOAD_URL"
+          wget -O data/lotto_backup.zip "$DOWNLOAD_URL"
+
+          echo "🔓 解压 ZIP 文件"
+          sudo apt-get update && sudo apt-get install -y unzip pv gzip
+          unzip -P "$BACKUP_PASSWORD" -o data/lotto_backup.zip -d data/
+
+          echo "🚀 恢复数据库（显示导入进度）"
+          SQL_GZ_FILE=$(find data -name '*.sql.gz' | head -n 1)
+          if [[ -z "$SQL_GZ_FILE" ]]; then
+            echo "❌ 未找到 SQL 压缩文件 (*.sql.gz)"
+            exit 1
+          fi
+
+          SQL_FILE_SIZE=$(gzip -l "$SQL_GZ_FILE" | awk 'NR==2 {print $2}')
+          gunzip -c "$SQL_GZ_FILE" | pv -s $SQL_FILE_SIZE | mysql -h$MYSQL_HOST -P$MYSQL_PORT -u$MYSQL_USER -p$MYSQL_PASSWORD $MYSQL_DATABASE
+
+          echo "🧹 清理中间文件"
+          rm -rf data/*
+
+          END_TIME=$(date +%s)
+          DURATION=$((END_TIME - START_TIME))
+          echo "=============================="
+          echo "✅ 恢复完成：耗时 ${DURATION} 秒（约 $((DURATION / 60)) 分钟）"
+          echo "⏱ 结束时间: $(date '+%Y-%m-%d %H:%M:%S')"
+          echo "=============================="
+
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
@@ -151,55 +201,20 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-#      - name: Download database backup
-#        env:
-#          BACKUP_PASSWORD: ${{ secrets.BACKUP_PASSWORD }}
-#        run: |
-#          mkdir -p data
-#          wget -O data/lotto_backup.zip "https://github.com/suwei8/lotto_ai3_v2-Backup_data/releases/download/backup-20250703/lotto_20250703_backup.zip"
-#          unzip -P "$BACKUP_PASSWORD" -o data/lotto_backup.zip -d data/
-#          ls -l data/
 
-      - name: Download latest database backup (auto)
-        env:
-          BACKUP_PASSWORD: ${{ secrets.BACKUP_PASSWORD }}
-        run: |
-          mkdir -p data
-          
-          # Get latest release info
-          # LATEST_JSON=$(curl -s https://api.github.com/repos/suwei8/lotto_ai3_v2-Backup_data/releases/latest)
-          
-          # Parse URL
-          # DOWNLOAD_URL=$(echo $LATEST_JSON | jq -r '.assets[] | select(.name | endswith("_backup.zip")) | .browser_download_url')
-          DOWNLOAD_URL="https://github.com/suwei8/lotto_ai3_v2-Backup_data/releases/download/backup-3d-20250706/lotto_3d_20250706_backup.zip"
-          
-          echo "✅ Latest backup URL: $DOWNLOAD_URL"
-          
-          wget -O data/lotto_backup.zip "$DOWNLOAD_URL"
-          
-          unzip -P "$BACKUP_PASSWORD" -o data/lotto_backup.zip -d data/
-          ls -l data/
-            
-
-      - name: Decompress SQL gzip
-        run: |
-          gunzip -f data/*.sql.gz
-
-      - name: Restore MySQL Database
-        env:
-          PYTHONIOENCODING: "utf-8"
-          MYSQL_HOST: 127.0.0.1
-          MYSQL_PORT: 3306
-          MYSQL_USER: root
-          MYSQL_PASSWORD: ${{ secrets.MYSQL_PASSWORD }}
-          MYSQL_DATABASE: ${{ secrets.MYSQL_DATABASE }}
-
-        run: |
-          chmod +x scripts/restore_db.sh
-          ./scripts/restore_db.sh
 
       - name: Set Python UTF-8 Encoding
         run: echo "PYTHONIOENCODING=utf-8" >> $GITHUB_ENV
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install requirements
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
 
       - name: Run Analysis Batch
         env:
