@@ -151,7 +151,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: 📦 动态获取最新数据库备份并还原（含进度显示）
+      - name: 📦 固定最新数据库备份并还原（含进度显示）
         run: |
           echo "=============================="
           echo "🎯 开始执行最新数据库恢复任务"
@@ -162,17 +162,8 @@ jobs:
           echo "📁 创建目录"
           mkdir -p data
           
-          echo "🌐 通过 GitHub API 获取 latest release 信息"
-          LATEST_JSON=$(curl -s https://api.github.com/repos/suwei8/lotto_ai3_v2-Backup_data/releases/latest)
-          
-          echo "🔍 解析下载链接"
-          DOWNLOAD_URL=$(echo "$LATEST_JSON" | jq -r '.assets[] | select(.name | endswith("_backup.zip")) | .browser_download_url')
-          
-          if [[ -z "$DOWNLOAD_URL" ]]; then
-            echo "❌ 未找到符合条件的备份 zip 文件"
-            exit 1
-          fi
-          
+          DOWNLOAD_URL="https://github.com/suwei8/LottoAI3_HitMatrix_date_3d/releases/download/backup-3d/lotto_3d_backup.zip"
+               
           echo "✅ 最新下载链接: $DOWNLOAD_URL"
           wget -O data/lotto_backup.zip "$DOWNLOAD_URL"
           
