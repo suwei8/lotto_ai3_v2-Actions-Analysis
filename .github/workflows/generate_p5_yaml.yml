@@ -16,9 +16,6 @@ on:
           - shiwei
           - gewei
 
-  schedule:
-    - cron: "0 7 * * *" # UTC 07:00 = 北京时间 15:00
-
 jobs:
   set-matrix:
     runs-on: ubuntu-latest
