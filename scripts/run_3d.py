@@ -8,6 +8,8 @@ import builtins
 from utils.logger import log, save_log_file_if_needed, init_log_capture
 from utils.db import get_connection
 from utils.expert_hit_analysis import run_hit_analysis_batch
+from dotenv import load_dotenv
+load_dotenv()
 
 def parse_int_env(key, default=None):
     val = os.getenv(key)
