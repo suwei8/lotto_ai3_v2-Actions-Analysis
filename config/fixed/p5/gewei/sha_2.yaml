@@ -12,7 +12,7 @@ LOOKBACK_N: 2
 # === 命中条件 ===
 HIT_RANK_LIST: [1,2]
 #  若开启此开关，则在专家筛选时仅保留“上一期命中过”的 user_id
-FILTER_LAST_HIT: true
+#FILTER_LAST_HIT: true
 
 # === 取值配置 ===
-ENABLE_DINGWEI_SHA: [1,2]
+ENABLE_DINGWEI_SHA: [10]
