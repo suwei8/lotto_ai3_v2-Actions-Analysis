@@ -1,0 +1,132 @@
+name: 福彩3D - 杀号回测分析
+
+on:
+  workflow_dispatch:
+    inputs:
+      ENABLE_BACKTEST:
+        description: "是否启用回测模式"
+        required: true
+        default: "true"
+        type: choice
+        options: ["true", "false"]
+
+      BACKTEST_NUM:
+        description: "回测期数（数字或ALL）"
+        required: true
+        default: "2"
+
+      POSITION:
+        description: "杀号位置（0=百位，1=十位，2=个位）"
+        required: true
+        default: "0"
+        type: choice
+        options: ["0", "1", "2"]
+
+      OFFSET:
+        description: "偏移位数（+1 表示排除排行榜偏移位置）"
+        required: true
+        default: "1"
+
+      LOTTERY_NAME:
+        description: "彩票类型"
+        required: true
+        default: "福彩3D"
+        type: choice
+        options:
+          - "福彩3D"
+          - "排列3"
+          - "排列5"
+
+      PLAYTYPE_LIST:
+        description: "分析玩法（单选）"
+        required: true
+        default: "百位定3"
+        type: choice
+        options:
+          - "独胆"
+          - "双胆"
+          - "三胆"
+          - "五码组选"
+          - "六码组选"
+          - "七码组选"
+          - "杀一"
+          - "杀二"
+          - "百位定3"
+          - "十位定3"
+          - "个位定3"
+          - "百位定1"
+          - "十位定1"
+          - "个位定1"
+          - "定位3*3*3-百位"
+          - "定位3*3*3-十位"
+          - "定位3*3*3-个位"
+          - "定位4*4*4-百位"
+          - "定位4*4*4-十位"
+          - "定位4*4*4-个位"
+          - "定位5*5*5-百位"
+          - "定位5*5*5-十位"
+          - "定位5*5*5-个位"
+
+env:
+  PYTHONIOENCODING: "utf-8"
+  MYSQL_HOST: 127.0.0.1
+  MYSQL_PORT: 3306
+  MYSQL_USER: root
+  MYSQL_PASSWORD: ${{ secrets.MYSQL_PASSWORD }}
+  MYSQL_DATABASE: ${{ secrets.MYSQL_DATABASE }}
+  WECHAT_API_URL: ${{ secrets.WECHAT_API_URL }}
+  WECHAT_API_KEY: ${{ secrets.WECHAT_API_KEY }}
+  GITHUB_RUN_NUMBER: ${{ github.run_number }}
+  BACKUP_PASSWORD: ${{ secrets.BACKUP_PASSWORD }}
+  MYSQL_ROOT_PASSWORD: ${{ secrets.MYSQL_PASSWORD }}
+
+jobs:
+  analyze:
+    runs-on: ubuntu-latest
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: ${{ secrets.MYSQL_PASSWORD }}
+          MYSQL_DATABASE: ${{ secrets.MYSQL_DATABASE }}
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 --silent"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: 📦 还原数据库
+        run: |
+          mkdir -p data
+          DOWNLOAD_URL="https://github.com/suwei8/LottoAI3_HitMatrix_date_3d/releases/download/backup-3d/lotto_3d_backup.zip"
+          wget -O data/lotto_backup.zip "$DOWNLOAD_URL"
+          sudo apt-get update && sudo apt-get install -y unzip pv gzip
+          unzip -P "$BACKUP_PASSWORD" -o data/lotto_backup.zip -d data/
+          SQL_GZ_FILE=$(find data -name '*.sql.gz' | head -n 1)
+          SQL_FILE_SIZE=$(gzip -l "$SQL_GZ_FILE" | awk 'NR==2 {print $2}')
+          export MYSQL_PWD="$MYSQL_PASSWORD"
+          gunzip -c "$SQL_GZ_FILE" | pv -f -s $SQL_FILE_SIZE | mysql -h$MYSQL_HOST -P$MYSQL_PORT -u$MYSQL_USER $MYSQL_DATABASE
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+
+      - name: Run Kill Filter Backtest
+        env:
+          ENABLE_BACKTEST: ${{ github.event.inputs.ENABLE_BACKTEST }}
+          BACKTEST_NUM: ${{ github.event.inputs.BACKTEST_NUM }}
+          POSITION: ${{ github.event.inputs.POSITION }}
+          OFFSET: ${{ github.event.inputs.OFFSET }}
+          LOTTERY_NAME: ${{ github.event.inputs.LOTTERY_NAME }}
+          PLAYTYPE_LIST: ${{ github.event.inputs.PLAYTYPE_LIST }}
+        run: python scripts/backtest_kill_filter.py
