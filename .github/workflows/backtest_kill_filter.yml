@@ -1,4 +1,4 @@
-name: 福彩3D - 杀号回测分析
+name: 上期杀本期分析
 
 on:
   workflow_dispatch:
