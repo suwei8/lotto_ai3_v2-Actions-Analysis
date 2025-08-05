@@ -1,4 +1,4 @@
-name: 上期杀本期分析
+name: 上期杀本期1码分析
 
 on:
   workflow_dispatch:
