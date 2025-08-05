@@ -174,4 +174,4 @@ jobs:
           OFFSET: ${{ github.event.inputs.OFFSET }}
           LOTTERY_NAME: ${{ github.event.inputs.LOTTERY_NAME }}
           PLAYTYPE_LIST: ${{ github.event.inputs.PLAYTYPE_LIST }}
-        run: python scripts/backtest_kill_filter.py
+        run: python scripts/filter_rank_by_prev_hit.py
