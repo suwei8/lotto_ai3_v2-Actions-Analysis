@@ -21,7 +21,7 @@ OFFSET = int(os.getenv("OFFSET", 1))
 POSITION = int(os.getenv("POSITION", 0))  # 百位=0，十位=1，个位=2
 LOTTERY_NAME = os.getenv("LOTTERY_NAME", "福彩3D")
 PLAYTYPE_LIST = ["百位定3"]
-
+RUN_NUMBER = os.getenv("GITHUB_RUN_NUMBER", "N/A")
 # ========== 企业微信发送函数 ==========
 def send_wechat_msg(msg):
     wechat_api_url = os.getenv("WECHAT_API_URL")
@@ -169,12 +169,12 @@ if ENABLE_BACKTEST:
     if total:
         first_issue = backtest_issues[-1]
         last_issue = backtest_issues[0]
-        msg = f"""📊 上期杀本期1码
-回测统计结果：
-分析玩法：{PLAYTYPE_LIST[0]}
-期号范围: {last_issue} ~ {first_issue}
-✅ 杀号成功期数：{success_count}
-❌ 杀号失败期数：{fail_count}
-📉 跳过期数：{skip_count}
-🎯 成功率：{success_count}/{total} = {success_count/total:.2%}"""
+        msg = f"""📊 上期杀本期1码（Run #{RUN_NUMBER}）
+        回测统计结果：
+        分析玩法：{PLAYTYPE_LIST[0]}
+        期号范围: {last_issue} ~ {first_issue}
+        ✅ 杀号成功期数：{success_count}
+        ❌ 杀号失败期数：{fail_count}
+        📉 跳过期数：{skip_count}
+        🎯 成功率：{success_count}/{total} = {success_count/total:.2%}"""
         send_wechat_msg(msg)
