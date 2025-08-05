@@ -20,7 +20,7 @@ BACKTEST_NUM = os.getenv("BACKTEST_NUM", "10")
 OFFSET = int(os.getenv("OFFSET", 1))
 POSITION = int(os.getenv("POSITION", 0))  # 百位=0，十位=1，个位=2
 LOTTERY_NAME = os.getenv("LOTTERY_NAME", "福彩3D")
-PLAYTYPE_LIST = ["百位定3"]
+PLAYTYPE_LIST = [os.getenv("PLAYTYPE_LIST", "百位定3")]
 RUN_NUMBER = os.getenv("GITHUB_RUN_NUMBER", "N/A")
 # ========== 企业微信发送函数 ==========
 def send_wechat_msg(msg):
