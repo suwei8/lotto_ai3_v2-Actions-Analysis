@@ -1,13 +1,12 @@
 import os
 import sys
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import pandas as pd
 from collections import Counter
 from functools import reduce
 from dotenv import load_dotenv
 from utils.db import get_connection
 
-# 加入项目根目录到 sys.path
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 # 导入企业微信发送模块
 import requests
