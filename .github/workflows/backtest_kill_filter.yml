@@ -25,7 +25,7 @@ on:
       OFFSET:
         description: "偏移位数（+1 表示排除排行榜偏移位置）"
         required: true
-        default: "1"
+        default: "0"
 
       LOTTERY_NAME:
         description: "彩票类型"
