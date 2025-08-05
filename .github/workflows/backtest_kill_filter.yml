@@ -13,7 +13,7 @@ on:
       BACKTEST_NUM:
         description: "回测期数（数字或ALL）"
         required: true
-        default: "2"
+        default: "ALL"
 
       POSITION:
         description: "杀号位置（0=百位，1=十位，2=个位）"
@@ -40,7 +40,7 @@ on:
       PLAYTYPE_LIST:
         description: "分析玩法（单选）"
         required: true
-        default: "百位定3"
+        default: "百位定1"
         type: choice
         options:
           - "独胆"
