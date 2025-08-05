@@ -170,8 +170,10 @@ if ENABLE_BACKTEST:
         first_issue = backtest_issues[-1]
         last_issue = backtest_issues[0]
         msg = f"""📊 上期杀本期1码（Run #{RUN_NUMBER}）
+        🎯 彩票类型：{LOTTERY_NAME}
         回测统计结果：
         分析玩法：{PLAYTYPE_LIST[0]}
+        🎯 杀号位置：第 {POSITION} 位，偏移：+{OFFSET}
         期号范围: {last_issue} ~ {first_issue}
         ✅ 杀号成功期数：{success_count}
         ❌ 杀号失败期数：{fail_count}
