@@ -11,7 +11,6 @@ ANALYZE_PLAYTYPE_NAME: 十位定1
 
 # === 命中条件 ===
 HIT_RANK_LIST: [7]
-FILTER_LAST_HIT: true     #true
 
 # === 取值配置 ===
 ENABLE_DINGWEI_SHA: [1]

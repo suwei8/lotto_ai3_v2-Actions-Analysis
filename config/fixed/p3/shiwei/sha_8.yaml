@@ -14,4 +14,4 @@ HIT_RANK_LIST: [1,2,3,4,5,6,7,8,9,10]
 FILTER_LAST_HIT: true     #true
 
 # === 取值配置 ===
-ENABLE_DINGWEI_SHA: [1,2,3]
+ENABLE_DINGWEI_SHA: [2]
