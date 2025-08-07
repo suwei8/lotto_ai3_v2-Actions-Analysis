@@ -1,0 +1,17 @@
+# config/fixed/3d/gewei/sha_2.yaml
+#  独立玩法推荐取值策略配置
+# === 定位杀号位置 ===
+DINGWEI_SHA_POS: 0
+
+QUERY_PLAYTYPE_NAME: 定位5*5*5-百位
+ANALYZE_PLAYTYPE_NAME: 定位5*5*5-百位
+
+# === 回溯期数 ===
+LOOKBACK_N: 5
+
+# === 命中条件 ===
+HIT_RANK_LIST: [6,7,8]
+
+# === 取值配置 ===
+ENABLE_DINGWEI_DAN1: [1,5,7,8,10]
+

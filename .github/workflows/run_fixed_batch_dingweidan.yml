@@ -1,0 +1,127 @@
+name: 定位定胆策略分析
+
+on:
+  workflow_dispatch:
+    inputs:
+      LOTTERY:
+        description: "彩票类型"
+        required: true
+        default: "3d"
+        type: choice
+        options:
+          - 3d
+          - p3
+          - p5
+
+      POSITION:
+        description: "分析位置"
+        required: true
+        default: "baiwei"
+        type: choice
+        options:
+          - baiwei
+          - shiwei
+          - gewei
+          - qianwei
+          - wanwei
+
+env:
+  PYTHONIOENCODING: "utf-8"
+  MYSQL_HOST: 127.0.0.1
+  MYSQL_PORT: 3306
+  MYSQL_USER: root
+  MYSQL_PASSWORD: ${{ secrets.MYSQL_PASSWORD }}
+  MYSQL_DATABASE: ${{ secrets.MYSQL_DATABASE }}
+  WECHAT_API_URL: ${{ secrets.WECHAT_API_URL }}
+  WECHAT_API_KEY: ${{ secrets.WECHAT_API_KEY }}
+  GITHUB_RUN_NUMBER: ${{ github.run_number }}
+  BACKUP_PASSWORD: ${{ secrets.BACKUP_PASSWORD }}
+  MYSQL_ROOT_PASSWORD: ${{ secrets.MYSQL_PASSWORD }}
+
+jobs:
+  analyze:
+    runs-on: ubuntu-latest
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: ${{ secrets.MYSQL_PASSWORD }}
+          MYSQL_DATABASE: ${{ secrets.MYSQL_DATABASE }}
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 --silent"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: 📦 还原数据库
+        run: |
+          echo "=============================="
+          echo "🎯 开始执行数据库恢复任务：${{ github.event.inputs.LOTTERY }}"
+          echo "⏱ 开始时间: $(date '+%Y-%m-%d %H:%M:%S')"
+          echo "=============================="
+          START_TIME=$(date +%s)
+
+          mkdir -p data
+
+          case "${{ github.event.inputs.LOTTERY }}" in
+            "3d")
+              DOWNLOAD_URL="https://github.com/suwei8/LottoAI3_HitMatrix_date_3d/releases/download/backup-3d/lotto_3d_backup.zip"
+              ;;
+            "p3")
+              DOWNLOAD_URL="https://github.com/suwei8/LottoAI3_HitMatrix_date/releases/download/backup-p3/lotto_p3_backup.zip"
+              ;;
+            "p5")
+              DOWNLOAD_URL="https://github.com/suwei8/LottoAI3_HitMatrix_date/releases/download/backup-p5/lotto_p5_backup.zip"
+              ;;
+            *)
+              echo "❌ 不支持的彩票类型: ${{ github.event.inputs.LOTTERY }}"
+              exit 1
+              ;;
+          esac
+
+          echo "✅ 下载链接: $DOWNLOAD_URL"
+          wget -O data/lotto_backup.zip "$DOWNLOAD_URL"
+
+          echo "🔓 解压 ZIP 文件"
+          sudo apt-get update && sudo apt-get install -y unzip pv gzip
+          unzip -P "$BACKUP_PASSWORD" -o data/lotto_backup.zip -d data/
+
+          echo "🚀 恢复数据库（显示导入进度）"
+          SQL_GZ_FILE=$(find data -name '*.sql.gz' | head -n 1)
+          if [[ -z "$SQL_GZ_FILE" ]]; then
+            echo "❌ 未找到 SQL 压缩文件 (*.sql.gz)"
+            exit 1
+          fi
+
+          SQL_FILE_SIZE=$(gzip -l "$SQL_GZ_FILE" | awk 'NR==2 {print $2}')
+          export MYSQL_PWD="$MYSQL_PASSWORD"
+          gunzip -c "$SQL_GZ_FILE" | pv -f -s $SQL_FILE_SIZE | mysql -h$MYSQL_HOST -P$MYSQL_PORT -u$MYSQL_USER $MYSQL_DATABASE
+
+          echo "🧹 清理中间文件"
+          rm -rf data/*
+
+          END_TIME=$(date +%s)
+          DURATION=$((END_TIME - START_TIME))
+          echo "=============================="
+          echo "✅ 恢复完成：耗时 ${DURATION} 秒（约 $((DURATION / 60)) 分钟）"
+          echo "⏱ 结束时间: $(date '+%Y-%m-%d %H:%M:%S')"
+          echo "=============================="
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+
+      - name: Run Fixed Batch Dingweidan
+        run: |
+          python scripts/run_fixed_batch_dingweidan.py --lottery ${{ github.event.inputs.LOTTERY }} --position ${{ github.event.inputs.POSITION }}
