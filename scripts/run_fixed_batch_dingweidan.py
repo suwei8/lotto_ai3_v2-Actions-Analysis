@@ -218,7 +218,7 @@ LOTTERY_DISPLAY_NAME = {
 # === 拼装最终消息体 ===
 msg = []
 lottery_cn = LOTTERY_DISPLAY_NAME.get(LOTTERY, LOTTERY)
-msg.append(f"【{lottery_cn}-{latest_issue}期-{pos_name_cn}杀号】")
+msg.append(f"【{lottery_cn}-{latest_issue}期-{pos_name_cn}定位】")
 msg.append(f"🏷️ Actions 运行编号: #{os.getenv('GITHUB_RUN_NUMBER', '0')}")
 msg.append(f"🏷️ 总分析用时: {hours}小时{minutes}分钟")
 msg.append(f"📦 固定策略配置: {len(CONFIGS)} 个")
@@ -229,7 +229,7 @@ msg.append("=============")
 msg.append(f"✅ 最终汇总结果（共 {len(merged_sha_nums)} 个）:\n")
 msg.append(", ".join(str(n) for n in merged_sha_nums))
 
-msg.append(f"🎯 {pos_name_cn} 杀：{', '.join(str(n) for n in merged_sha_nums)}")
+msg.append(f"🎯 {pos_name_cn}定胆：{', '.join(str(n) for n in merged_sha_nums)}")
 
 # 最后拼接
 msg_text = "\n".join(msg)
