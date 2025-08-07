@@ -37,9 +37,6 @@ on:
           - latest
           - fulltest
 
-  schedule:
-    - cron: "0 6 * * *"
-     # 每天 UTC 06:00 ➜ 北京时间 14:00
 jobs:
   set-matrix:
     runs-on: ubuntu-latest
