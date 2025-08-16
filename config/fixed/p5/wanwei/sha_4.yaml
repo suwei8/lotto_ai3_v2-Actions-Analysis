@@ -7,12 +7,10 @@ QUERY_PLAYTYPE_NAME: 万位定1
 ANALYZE_PLAYTYPE_NAME: 万位定1
 
 # === 回溯期数 ===
-LOOKBACK_N: None
+LOOKBACK_N: 0
 
 # === 命中条件 ===
-HIT_RANK_LIST: [-1]
-#  若开启此开关，则在专家筛选时仅保留“上一期命中过”的 user_id
-FILTER_LAST_HIT: False     #true
+HIT_RANK_LIST: [1,2,-1,-2]
 
 # === 取值配置 ===
-ENABLE_DINGWEI_SHA: ["All"]
+ENABLE_DINGWEI_SHA: [1,2,3]
