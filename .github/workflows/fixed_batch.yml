@@ -132,30 +132,43 @@ jobs:
           echo "✅ 当前 北京时间: $(TZ='Asia/Shanghai' date '+%Y-%m-%d %H:%M:%S')"
           echo "========================"
 
-      - name: 📦 动态获取最新数据库备份并还原（含进度显示）
+      - name: 📦 获取数据库备份并还原（按彩种动态URL）
         run: |
+          set -euo pipefail
+
           echo "=============================="
-          echo "🎯 开始执行最新数据库恢复任务"
+          echo "🎯 开始执行数据库恢复任务（按彩种动态URL）"
           echo "⏱ 开始时间: $(date '+%Y-%m-%d %H:%M:%S')"
           echo "=============================="
           START_TIME=$(date +%s)
 
+          # === 彩种来自矩阵 ===
+          LOTTERY="${{ matrix.lottery }}"
+          echo "✅ LOTTERY = ${LOTTERY}"
+
+          # === 按彩种映射下载地址 ===
+          case "$LOTTERY" in
+            "3d")
+              DOWNLOAD_URL="https://github.com/suwei8/LottoAI3_HitMatrix_date_3d/releases/download/backup-3d/lotto_3d_backup.zip"
+              ;;
+            "p3")
+              DOWNLOAD_URL="https://github.com/suwei8/LottoAI3_HitMatrix_date/releases/download/backup-p3/lotto_p3_backup.zip"
+              ;;
+            "p5")
+              DOWNLOAD_URL="https://github.com/suwei8/LottoAI3_HitMatrix_date/releases/download/backup-p5/lotto_p5_backup.zip"
+              ;;
+            *)
+              echo "❌ Unsupported LOTTERY: $LOTTERY"
+              exit 1
+              ;;
+          esac
+
           echo "📁 创建目录"
           mkdir -p data
 
-          echo "🌐 通过 GitHub API 获取 latest release 信息"
-          LATEST_JSON=$(curl -s https://api.github.com/repos/suwei8/lotto_ai3_v2-Backup_data/releases/latest)
-
-          echo "🔍 解析下载链接"
-          DOWNLOAD_URL=$(echo "$LATEST_JSON" | jq -r '.assets[] | select(.name | endswith("_backup.zip")) | .browser_download_url')
-
-          if [[ -z "$DOWNLOAD_URL" ]]; then
-            echo "❌ 未找到符合条件的备份 zip 文件"
-            exit 1
-          fi
-
-          echo "✅ 最新下载链接: $DOWNLOAD_URL"
-          wget -O data/lotto_backup.zip "$DOWNLOAD_URL"
+          echo "✅ 解析出的下载链接: $DOWNLOAD_URL"
+          # 建议多次重试以提高稳定性
+          curl -fL --retry 3 --retry-delay 2 -o data/lotto_backup.zip "$DOWNLOAD_URL"
 
           echo "🔓 解压 ZIP 文件"
           sudo apt-get update && sudo apt-get install -y unzip pv gzip
@@ -165,11 +178,13 @@ jobs:
           SQL_GZ_FILE=$(find data -name '*.sql.gz' | head -n 1)
           if [[ -z "$SQL_GZ_FILE" ]]; then
             echo "❌ 未找到 SQL 压缩文件 (*.sql.gz)"
+            ls -lh data || true
             exit 1
           fi
 
           SQL_FILE_SIZE=$(gzip -l "$SQL_GZ_FILE" | awk 'NR==2 {print $2}')
-          gunzip -c "$SQL_GZ_FILE" | pv -s $SQL_FILE_SIZE | mysql -h$MYSQL_HOST -P$MYSQL_PORT -u$MYSQL_USER -p$MYSQL_PASSWORD $MYSQL_DATABASE
+          gunzip -c "$SQL_GZ_FILE" | pv -s "$SQL_FILE_SIZE" | \
+            mysql -h"$MYSQL_HOST" -P"$MYSQL_PORT" -u"$MYSQL_USER" -p"$MYSQL_PASSWORD" "$MYSQL_DATABASE"
 
           echo "🧹 清理中间文件"
           rm -rf data/*
@@ -180,6 +195,9 @@ jobs:
           echo "✅ 恢复完成：耗时 ${DURATION} 秒（约 $((DURATION / 60)) 分钟）"
           echo "⏱ 结束时间: $(date '+%Y-%m-%d %H:%M:%S')"
           echo "=============================="
+
+
+
 
       - name: Setup Python
         uses: actions/setup-python@v5
