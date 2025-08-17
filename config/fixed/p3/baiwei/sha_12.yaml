@@ -3,8 +3,8 @@
 # === 定位杀号位置 ===
 DINGWEI_SHA_POS: 0
 
-QUERY_PLAYTYPE_NAME: 万位杀1
-ANALYZE_PLAYTYPE_NAME: 万位定1
+QUERY_PLAYTYPE_NAME: 杀一
+ANALYZE_PLAYTYPE_NAME: 杀一
 
 # === 回溯期数 ===
 LOOKBACK_N: None
@@ -12,5 +12,6 @@ LOOKBACK_N: None
 # === 命中条件 ===
 HIT_RANK_LIST: [1]
 
+
 # === 取值配置 ===
-ENABLE_DINGWEI_SHA: [7]
+ENABLE_DINGWEI_SHA: [5,6]
