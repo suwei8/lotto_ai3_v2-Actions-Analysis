@@ -1,4 +1,4 @@
-name: 定位杀号 - 多彩种批量
+name: 定位杀号 - 多彩种策略批量回测
 
 on:
   workflow_dispatch:
@@ -27,15 +27,18 @@ on:
       CONFIG_FILE:
         description: "选择要单独执行的配置文件（可选）"
         required: false
-
       MODE:
-        description: "执行模式"
+        description: "执行模式（latest=最新一期；fulltest=全量；issue=指定期号）"
         required: true
         type: choice
         default: "latest"
         options:
           - latest
           - fulltest
+          - issue
+      ISSUE:
+        description: "指定期号（仅 MODE=issue 生效，如 2025218）"
+        required: false
 
 jobs:
   set-matrix:
@@ -45,18 +48,13 @@ jobs:
     steps:
       - id: set
         run: |
-          # === 从 inputs 取值（仅 workflow_dispatch 时有值）
+          # === 从 inputs 取值（仅 workflow_dispatch 时有值） ===
           LOTTERY="${{ github.event.inputs.LOTTERY }}"
           POSITION="${{ github.event.inputs.POSITION }}"
 
-          # === 定时触发时 inputs 会是空，需要兜底 ===
-          if [[ -z "$LOTTERY" ]]; then
-            LOTTERY="3d"
-          fi
-
-          if [[ -z "$POSITION" ]]; then
-            POSITION="all"
-          fi
+          # === 定时触发兜底 ===
+          if [[ -z "$LOTTERY" ]]; then LOTTERY="3d"; fi
+          if [[ -z "$POSITION" ]]; then POSITION="all"; fi
 
           echo "✅ 解析后 LOTTERY=$LOTTERY"
           echo "✅ 解析后 POSITION=$POSITION"
@@ -77,7 +75,6 @@ jobs:
 
           echo "matrix={\"lottery\":[\"$LOTTERY\"], \"position\":$POSITIONS}" >> $GITHUB_OUTPUT
 
-
   analyze:
     needs: set-matrix
     runs-on: ubuntu-latest
@@ -96,16 +93,16 @@ jobs:
       BACKUP_PASSWORD: ${{ secrets.BACKUP_PASSWORD }}
       MYSQL_ROOT_PASSWORD: ${{ secrets.MYSQL_PASSWORD }}
       CONFIG_FILE: ${{ github.event.inputs.CONFIG_FILE }}
-      # ✅ 新增模式开关（这块就是可直接用的）
-      # ✅ 模式开关（定稿版）
+
+      # === 执行模式 ===
       MODE: ${{ github.event.inputs.MODE || 'latest' }}
 
+      # === 缺省：latest 用最小量，fulltest 全量，issue 由后续步骤覆盖 ===
       ENABLE_HIT_CHECK: ${{ github.event.inputs.MODE == 'fulltest' && 'True' || 'False' }}
       ENABLE_TRACK_OPEN_RANK: ${{ github.event.inputs.MODE == 'fulltest' && 'True' || 'False' }}
       LOG_SAVE_MODE: ${{ github.event.inputs.MODE == 'fulltest' && 'True' || 'False' }}
       ALL_MODE_LIMIT: ${{ github.event.inputs.MODE && github.event.inputs.MODE == 'fulltest' && 'None' || '1' }}
       QUERY_ISSUES: ${{ github.event.inputs.MODE == 'fulltest' && 'All' || 'None' }}
-
 
     services:
       mysql:
@@ -132,6 +129,40 @@ jobs:
           echo "✅ 当前 北京时间: $(TZ='Asia/Shanghai' date '+%Y-%m-%d %H:%M:%S')"
           echo "========================"
 
+      # === 解析 MODE=issue 并校验 ISSUE，导出统一环境变量 ===
+      - name: Resolve MODE=issue & export QUERY_ISSUES
+        run: |
+          set -euo pipefail
+
+          MODE_IN="${{ env.MODE }}"
+          ISSUE_IN="${{ github.event.inputs.ISSUE }}"
+
+          echo "🔧 MODE=${MODE_IN}"
+          echo "🔧 ISSUE(raw)=${ISSUE_IN}"
+
+          if [[ "${MODE_IN}" == "issue" ]]; then
+            if [[ -z "${ISSUE_IN}" ]]; then
+              echo "❌ MODE=issue 但 ISSUE 为空"
+              exit 1
+            fi
+            if [[ ! "${ISSUE_IN}" =~ ^[0-9]{7}$ ]]; then
+              echo "❌ ISSUE 格式不正确，应为 7 位数字，例如 2025218"
+              exit 1
+            fi
+
+            # 覆盖到脚本可识别的 QUERY_ISSUES（与你现有 All/None 兼容）
+            echo 'QUERY_ISSUES=["'"${ISSUE_IN}"'"]' >> "$GITHUB_ENV"
+
+            # 单期分析：限制量级、保持非全量的其他开关
+            echo 'ALL_MODE_LIMIT=1' >> "$GITHUB_ENV"
+            echo 'ENABLE_HIT_CHECK=False' >> "$GITHUB_ENV"
+            echo 'ENABLE_TRACK_OPEN_RANK=False' >> "$GITHUB_ENV"
+            echo 'LOG_SAVE_MODE=False' >> "$GITHUB_ENV"
+            echo "✅ 已设置 QUERY_ISSUES=[\"${ISSUE_IN}\"]"
+          fi
+
+          echo "🧪 最终将使用 QUERY_ISSUES=${QUERY_ISSUES:-'(尚未覆盖，使用缺省)'}"
+
       - name: 📦 获取数据库备份并还原（按彩种动态URL）
         run: |
           set -euo pipefail
@@ -142,11 +173,9 @@ jobs:
           echo "=============================="
           START_TIME=$(date +%s)
 
-          # === 彩种来自矩阵 ===
           LOTTERY="${{ matrix.lottery }}"
           echo "✅ LOTTERY = ${LOTTERY}"
 
-          # === 按彩种映射下载地址 ===
           case "$LOTTERY" in
             "3d")
               DOWNLOAD_URL="https://github.com/suwei8/LottoAI3_HitMatrix_date_3d/releases/download/backup-3d/lotto_3d_backup.zip"
@@ -165,9 +194,7 @@ jobs:
 
           echo "📁 创建目录"
           mkdir -p data
-
           echo "✅ 解析出的下载链接: $DOWNLOAD_URL"
-          # 建议多次重试以提高稳定性
           curl -fL --retry 3 --retry-delay 2 -o data/lotto_backup.zip "$DOWNLOAD_URL"
 
           echo "🔓 解压 ZIP 文件"
@@ -196,9 +223,6 @@ jobs:
           echo "⏱ 结束时间: $(date '+%Y-%m-%d %H:%M:%S')"
           echo "=============================="
 
-
-
-
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
@@ -214,5 +238,3 @@ jobs:
 
       - name: Run Fixed Batch
         run: python scripts/run_fixed_batch.py --lottery ${{ matrix.lottery }} --position ${{ matrix.position }}
-
-
